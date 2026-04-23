@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>土木16タイプ診断 (CBTI) - SIT Civil Circle</title>
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-XXXXXXXXXX');
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Josefin+Sans:wght@300;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+<style>
+  :root {
+    --blue-deep: #1a3a5c;
+    --blue-mid:  #2563a8;
+    --blue-light: #4a9fd4;
+    --blue-pale: #dbeeff;
+    --blue-ultra: #f0f7ff;
+    --white: #ffffff;
+    --gray-soft: #8fa3b8;
+    --gray-line: #d8e8f5;
+    --text-main: #1a2e44;
+    --text-sub: #5a7a96;
+    --error-red: #e74c3c;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: linear-gradient(160deg, #e8f3ff 0%, #f6faff 50%, #eef6ff 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 20px 10px 20px;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(37,99,168,0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(37,99,168,0.05) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  #app-container {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 600px;
+  }
+
+  /* ── ローディング画面 ── */
+  #loading-screen {
+    position: fixed;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.9);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    color: var(--blue-mid);
+    font-weight: 700;
+  }
+  .spinner {
+    width: 40px; height: 40px;
+    border: 4px solid var(--blue-pale);
+    border-top-color: var(--blue-mid);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 15px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Header ── */
+  .app-header {
+    text-align: center;
+    margin-bottom: 24px;
+    animation: fadeSlideDown 0.5s ease both;
+  }
+  .app-header .label-eng {
+    display: inline-block;
+    font-family: 'Josefin Sans', sans-serif;
+    font-size: 0.7em;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    color: var(--blue-light);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .app-header h1 {
+    font-family: 'Josefin Sans', sans-serif;
+    font-size: clamp(1.4em, 4.5vw, 2em);
+    font-weight: 700;
+    color: var(--blue-deep);
+  }
+  .app-header h1 span { color: var(--blue-mid); }
+  .app-header .subtitle {
+    margin-top: 4px;
+    font-size: 0.8em;
+    color: var(--text-sub);
+  }
+
+  /* ── 共通カードスタイル ── */
+  .content-card {
+    background: var(--white);
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(26,58,92,0.06);
+    padding: 24px 20px;
+    margin-bottom: 20px;
+  }
+
+  /* ── Step 1: アンケート ── */
+  #step1-area {
+    animation: fadeSlideUp 0.5s ease both;
+  }
+  .form-group { margin-bottom: 20px; }
+  .form-label {
+    display: block;
+    font-size: 0.95em;
+    font-weight: 700;
+    color: var(--blue-deep);
+    margin-bottom: 8px;
+  }
+  .form-control {
+    width: 100%;
+    padding: 12px 15px;
+    font-size: 1em;
+    font-family: inherit;
+    color: var(--text-main);
+    border: 2px solid var(--gray-line);
+    border-radius: 8px;
+    background-color: #fafcfd;
+    transition: border-color 0.3s;
+  }
+  .form-control:focus {
+    outline: none;
+    border-color: var(--blue-mid);
+    background-color: var(--white);
+  }
+  textarea.form-control {
+    resize: vertical;
+    min-height: 100px;
+  }
+
+  /* 条件付きで表示されるフィールドのデザイン */
+  .dependent-field {
+    margin-top: -10px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--gray-line);
+  }
+  .slide-down-fade { animation: slideDownFade 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+  /* ── Step 2: 診断問題 ── */
+  #step2-area {
+    display: none;
+    animation: fadeSlideUp 0.5s ease both;
+  }
+  .question-card {
+    border: 2px solid transparent;
+    transition: border-color 0.3s;
+    padding-bottom: 50px; 
+  }
+  .question-card.error {
+    border-color: var(--error-red);
+    background-color: #fffaf9;
+  }
+  .question-text {
+    font-size: 0.95em;
+    font-weight: 700;
+    color: var(--text-main);
+    line-height: 1.6;
+    margin-bottom: 24px;
+  }
+
+  /* ── 5-Point Scale UI ── */
+  .scale-container {
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    align-items: center; 
+    padding: 0 5px;
+    height: 60px; 
+  }
+  .scale-container::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    left: 20px;
+    right: 20px;
+    height: 4px;
+    background: var(--gray-line);
+    z-index: 0;
+    border-radius: 2px;
+  }
+  .scale-option {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    width: 18%;
+  }
+  .scale-option input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+  }
+  .scale-bubble {
+    border-radius: 50%;
+    background: var(--white);
+    border: 3px solid var(--blue-pale);
+    transition: all 0.2s cubic-bezier(.4,0,.2,1);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  }
+  .scale-bubble.size-L { width: 52px; height: 52px; }
+  .scale-bubble.size-M { width: 42px; height: 42px; }
+  .scale-bubble.size-S { width: 32px; height: 32px; }
+
+  @media (max-width: 400px) {
+    .scale-bubble.size-L { width: 44px; height: 44px; }
+    .scale-bubble.size-M { width: 36px; height: 36px; }
+    .scale-bubble.size-S { width: 28px; height: 28px; }
+  }
+
+  .scale-option input[type="radio"]:checked + .scale-bubble {
+    background: var(--blue-mid);
+    border-color: var(--blue-mid);
+    transform: scale(1.15);
+    box-shadow: 0 4px 12px rgba(37,99,168,0.3);
+  }
+  .scale-label-wrapper {
+    position: absolute;
+    top: 100%;
+    width: 100%;
+    text-align: center;
+    margin-top: 12px;
+  }
+  .scale-label {
+    font-size: 0.7em;
+    font-weight: 700;
+    color: var(--text-sub);
+    line-height: 1.3;
+    white-space: pre-wrap;
+  }
+  .scale-option input[type="radio"]:checked ~ .scale-label-wrapper .scale-label {
+    color: var(--blue-mid);
+  }
+
+  /* ── Buttons ── */
+  .btn-submit {
+    display: block;
+    width: 100%;
+    padding: 18px;
+    background: var(--blue-deep);
+    color: var(--white);
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 1.1em;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(26,58,92,0.2);
+    transition: background 0.2s, transform 0.1s;
+  }
+  .btn-submit:hover { background: var(--blue-mid); transform: translateY(-2px); }
+  .btn-submit:active { transform: translateY(0); }
+  .submit-btn-wrapper { margin-top: 40px; margin-bottom: 20px; }
+  
+  .btn-share {
+    background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+    margin-top: 15px;
+  }
+  .btn-share:hover {
+    background: linear-gradient(45deg, #e6683c 0%, #dc2743 25%, #cc2366 50%, #bc1888 75%, #f09433 100%);
+  }
+
+  .btn-x {
+    background: #000000;
+    margin-top: 15px;
+  }
+  .btn-x:hover {
+    background: #333333;
+  }
+
+  .btn-disabled {
+    background: var(--gray-soft);
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+  .btn-disabled:hover { background: var(--gray-soft); transform: none; }
+
+  /* ── Result Area ── */
+  #result-area {
+    display: none;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 16px 48px rgba(26,58,92,0.18);
+    animation: fadeSlideUp 0.5s ease both;
+    background: var(--white);
+    position: relative;
+    margin-bottom: 20px;
+  }
+  .result-hero {
+    padding: 40px 20px 30px;
+    text-align: center;
+    color: var(--white);
+  }
+  .result-code-badge {
+    display: inline-block;
+    font-family: 'Josefin Sans', sans-serif;
+    font-size: 0.85em;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    background: rgba(255,255,255,0.2);
+    border: 1px solid rgba(255,255,255,0.4);
+    padding: 6px 20px;
+    border-radius: 99px;
+    margin-bottom: 15px;
+  }
+  .result-type-name {
+    font-size: clamp(1.4em, 5vw, 2em);
+    font-weight: 900;
+    line-height: 1.3;
+  }
+  .result-body { padding: 30px 20px 40px; }
+  .result-desc {
+    font-size: 1.05em;
+    line-height: 1.7;
+    color: var(--text-main);
+    margin-bottom: 25px;
+    padding-bottom: 25px;
+    border-bottom: 1px solid var(--gray-line);
+  }
+
+  /* 画像化時に色が飛ばないためのソリッド指定と2段構成 */
+  .job-box {
+    background: #f0f7ff; 
+    border-radius: 12px;
+    padding: 20px;
+    border-left: 4px solid #2563a8;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+  .job-box-section {
+    display: flex;
+    flex-direction: column;
+  }
+  .job-box-divider {
+    height: 1px;
+    background-color: #d8e8f5;
+    margin: 5px 0;
+  }
+  .job-label {
+    font-size: 0.85em;
+    font-weight: 900; 
+    color: #1a3a5c; 
+    margin-bottom: 8px;
+    display: block;
+  }
+  .job-text { 
+    font-size: 1em; 
+    color: #333333; 
+    line-height: 1.6; 
+    font-weight: 700; 
+  }
+
+  .share-hashtags {
+    display: none;
+    text-align: center;
+    font-size: 1.1em;
+    font-weight: 900;
+    color: var(--blue-mid);
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 2px dashed var(--gray-line);
+    letter-spacing: 0.05em;
+  }
+
+  /* ── Footer ── */
+  .app-footer {
+    text-align: left;
+    margin-top: 30px;
+    padding: 20px;
+    color: var(--text-sub);
+    border-top: 1px solid rgba(37,99,168,0.1);
+    background: rgba(255, 255, 255, 0.4);
+    border-radius: 12px;
+    font-size: 0.75em;
+    line-height: 1.6;
+  }
+  .app-footer h4 {
+    font-size: 1.1em;
+    color: var(--blue-deep);
+    margin-bottom: 6px;
+  }
+  .app-footer p {
+    margin-bottom: 15px;
+  }
+  .app-footer .copyright {
+    text-align: center;
+    font-family: 'Josefin Sans', sans-serif;
+    font-size: 1.1em;
+    margin-top: 20px;
+    margin-bottom: 0;
+  }
+
+  /* ── Animations ── */
+  @keyframes fadeSlideDown { from { opacity: 0; transform: translateY(-15px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes fadeSlideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes slideDownFade { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+</head>
+<body>
+
+<div id="loading-screen">
+  <div class="spinner"></div>
+  <p>データを読み込んでいます...</p>
+</div>
+
+<iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"></iframe>
+
+<div id="app-container">
+  <header class="app-header">
+    <div class="label-eng">SIT CIVIL CIRCLE</div>
+    <h1>土木16タイプ診断 <span>(CBTI)</span></h1>
+    <p class="subtitle">Civil Behavior Type Indicator</p>
+  </header>
+
+  <div id="step1-area">
+    <div class="content-card">
+      <div id="step1-dynamic-container">
+        </div>
+      <button type="button" id="btn-start" class="btn-submit" onclick="goToStep2()">診断を始める</button>
+    </div>
+  </div>
+
+  <div id="step2-area">
+    <form id="quiz-form">
+      <div id="questions-container" style="padding-bottom: 20px;">
+      </div>
+      <div class="submit-btn-wrapper">
+        <button type="button" class="btn-submit" onclick="submitQuiz()">診断結果を見る</button>
+      </div>
+    </form>
+  </div>
+
+  <div id="result-area">
+    <div class="result-hero" id="result-hero">
+      <div class="result-code-badge" id="result-code"></div>
+      <div class="result-type-name" id="result-name"></div>
+    </div>
+    <div class="result-body">
+      <p class="result-desc" id="result-description"></p>
+      
+      <div class="job-box">
+        <div class="job-box-section">
+          <span class="job-label">■ おすすめの職種・就職先イメージ</span>
+          <div class="job-text" id="result-job-text"></div>
+        </div>
+        <div class="job-box-divider"></div>
+        <div class="job-box-section">
+          <span class="job-label">💡 土木豆知識</span>
+          <div class="job-text" id="result-trivia-text"></div>
+        </div>
+      </div>
+
+      <div id="share-hashtags" class="share-hashtags"></div>
+
+      <div class="action-buttons">
+        <button type="button" class="btn-submit btn-x" onclick="shareToX()">𝕏 X(Twitter)で結果をシェア</button>
+        <button type="button" class="btn-submit btn-share" onclick="shareToInstagram()">📸 画像を保存してInstagramへ投稿</button>
+        <button type="button" class="btn-submit" style="margin-top: 15px; background: var(--text-main);" onclick="location.reload()">🔄 もう一度診断する</button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="app-footer">
+    <h4>プライバシーポリシー</h4>
+    <p>当サイトでは、利用状況の分析のためにGoogle Analyticsを利用しています。また、入力された属性や回答データは、本企画の分析および今後のサービス向上のための統計データとしてのみ利用し、個人を特定する情報は一切取得・保持いたしません。</p>
+    
+    <h4>免責事項・商標について</h4>
+    <p>本診断（CBTI）は、土木・都市分野への興味関心の傾向を測る目的で作成された独自のエンターテインメントコンテンツです。MBTI&reg;（Myers-Briggs Type Indicator）をはじめとする既存の性格診断テストとは一切関係がありません。</p>
+    
+    <p class="copyright">&copy; 2026 SIT Civil Circle</p>
+  </footer>
+
+</div>
+
+<script>
+  // ==========================================
+  // 【運用ロジック】URLから現在のモードを動的判定
+  // ==========================================
+  const CURRENT_MODE = (function() {
+    const params = new URLSearchParams(window.location.search);
+    const mode = params.get('mode');
+    const validModes = ['omiya', 'shibaura', 'normal', 'spare'];
+    return validModes.includes(mode) ? mode : 'normal';
+  })();
+
+  // ==========================================
+  // 【設定領域】データ外部読み込み用API URL
+  // ==========================================
+  const API_URL = ""; 
+
+  // ==========================================
+  // デフォルト（フォールバック用）データ構造
+  // ==========================================
+  const commonQuestions = [
+    {
+      id: "entry.111111111", type: "select", label: "あなたの属性（該当するもの） <span style='color:var(--error-red);'>*</span>", required: true,
+      options: [
+        { label: "選択してください", value: "" }, { label: "小学生以下", value: "小学生以下" }, { label: "中学生", value: "中学生" },
+        { label: "高校生", value: "高校生" }, { label: "大学生", value: "大学生" }, { label: "一般", value: "一般" }, { label: "その他", value: "その他" }
+      ]
+    },
+    {
+      id: "entry.444444444", type: "select", label: "学部・学科・専攻（任意）", required: false, dependsOn: { id: "entry.111111111", value: "大学生" },
+      options: [
+        { label: "選択してください", value: "" }, { label: "土木・都市・環境系", value: "土木・都市・環境系" }, { label: "建築系", value: "建築系" },
+        { label: "機械工学系", value: "機械工学系" }, { label: "電気電子・情報工学系", value: "電気電子・情報工学系" }, { label: "化学・生命・物質系", value: "化学・生命・物質系" },
+        { label: "理学・数学系", value: "理学・数学系" }, { label: "文系・その他学部", value: "文系・その他学部" }, { label: "その他", value: "その他" }
+      ]
+    },
+    { id: "entry.888888888", type: "text", label: "学部・系統名（自由記述）", required: false, dependsOn: { id: "entry.444444444", value: "その他" }, placeholder: "学部・系統名をご記入ください" }
+  ];
+
+  const modeSpecificQuestions = {
+    omiya: { id: "entry.222222222", type: "textarea", label: "大宮祭への期待や感想（任意）", required: false, placeholder: "ご自由に記入してください" },
+    shibaura: { id: "entry.666666666", type: "textarea", label: "芝浦祭への期待や感想（任意）", required: false, placeholder: "ご自由に記入してください" },
+    normal: {
+      id: "entry.555555555", type: "select", label: "このサイトをどこで知りましたか？ <span style='color:var(--error-red);'>*</span>", required: true,
+      options: [
+        { label: "選択してください", value: "" }, { label: "SNS (X / Instagram)", value: "SNS(X/Instagram)" }, { label: "知人の紹介", value: "知人の紹介" },
+        { label: "Google / Yahoo! 等の検索", value: "検索サイト" }, { label: "学内掲示・配布物", value: "学内掲示・配布物" }, { label: "その他", value: "その他" }
+      ]
+    },
+    spare: { id: "entry.777777777", type: "textarea", label: "本診断へのご意見・ご要望（任意）", required: false, placeholder: "テスト用・予備用のフリー入力欄です" }
+  };
+
+  let appData = {
+    formUrl: "https://docs.google.com/forms/u/0/d/e/XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX/formResponse",
+    resultCodeEntryId: "entry.333333333",
+    shareSettings: {
+      url: "https://example.com/cbti", 
+      xDefaultText: "土木16タイプ診断（CBTI）をやりました！私の結果は",
+      hashtags: "CBTI,大宮祭,土木"
+    },
+    step1Questions: {
+      omiya: [...commonQuestions, modeSpecificQuestions.omiya],
+      shibaura: [...commonQuestions, modeSpecificQuestions.shibaura],
+      normal: [...commonQuestions, modeSpecificQuestions.normal],
+      spare: [...commonQuestions, modeSpecificQuestions.spare]
+    },
+    step2Questions: [
+      { id: "entry.100000001", axis: "S", text: "Q1. 巨大な橋やダムの迫力ある姿を見ると、「どうやって作られているんだろう？」と細部まで見入ってしまう。" },
+      { id: "entry.100000002", axis: "U", text: "Q2. 地図や航空写真を眺めながら、「ここに新しい道ができたら街がどう変わるか」を想像するのが好きだ。" },
+      { id: "entry.100000003", axis: "U", text: "Q3. 完成したときの喜びは、ひとつの美しい構造物を作るよりも、街全体の景色を変えることにあると思う。" },
+      { id: "entry.100000004", axis: "A", text: "Q4. 何十年、何百年と続く「当たり前の日常と安全」を、裏方として絶対に守り抜くことに強い責任感を感じる。" },
+      { id: "entry.100000005", axis: "C", text: "Q5. 前例のない難工事や、最新のテクノロジーを駆使した「世界初」のプロジェクトに挑んでみたい。" },
+      { id: "entry.100000006", axis: "A", text: "Q6. 何か作業をするときは、思い切ったアイデアを試すよりも、ミスがないよう確実に手順を積み上げる方が安心する。" },
+      { id: "entry.100000007", axis: "L", text: "Q7. 複雑な計算や緻密な図面を書き上げ、理論的に完璧な答えを導き出す瞬間に達成感を感じる。" },
+      { id: "entry.100000008", axis: "F", text: "Q8. ヘルメットを被って現場に立ち、刻々と変わる状況を判断しながら仲間と家や街を形にしていくのがかっこいいと思う。" },
+      { id: "entry.100000009", axis: "F", text: "Q9. 自分のアイデアを形にするなら、PC画面上のシミュレーションよりも、実際に重機が動くリアルな場所で勝負したい。" },
+      { id: "entry.100000010", axis: "P", text: "Q10. 「この分野の知識・技術なら誰にも負けない」と言えるような、特定の道を極めたスペシャリストに憧れる。" },
+      { id: "entry.100000011", axis: "M", text: "Q11. 専門家や地域住民など、異なる立場の人たちの間に立ち、意見をまとめてプロジェクトを動かす役割が得意だ。" },
+      { id: "entry.100000012", axis: "M", text: "Q12. 部分的な完成度を高めることよりも、100年後の未来を見据えて「プロジェクト全体のバランス」を整えることに魅力を感じる。" }
+    ],
+    resultsData: {
+      "SALP": { pdfCode: "SLAP", name: "きっちり構造プランナー", color: "#1d5fa6", desc: "計算や安全を大切にする堅実派です。論理的な思考と確かな技術力で、橋やダムを支える縁の下の力持ちです。", job: "橋梁・構造設計エンジニア\n建設コンサルタント", trivia: "明石海峡大橋のケーブルは、地球を何周もできるほどの長さのワイヤーを束ねて作られています。" },
+      "SALM": { pdfCode: "SLAM", name: "安心まちづくりアナリスト", color: "#1a7a55", desc: "災害や安全を広い視点で考えるのが得意です。データと俯瞰的な視野で、地域全体の安全を守ります。", job: "防災・河川計画コンサルタント\n公務員の危機管理担当", trivia: "地下神殿とも呼ばれる首都圏外郭放水路は、洪水を防ぐために作られた世界最大級の地下放水路です。" },
+      "SAFP": { pdfCode: "SLFP", name: "構造しっかり職人タイプ", color: "#2c4560", desc: "現場で丁寧な作業と管理をこなすプロです。自分の目で確かめながら、確実な仕事を積み上げます。", job: "施工管理技士\nゼネコン・専門工事会社の現場監督", trivia: "コンクリートは固まる際に「水和熱」という熱を出します。ダムなどの巨大な構造物では、この熱を冷ますためのパイプが埋め込まれることがあります。" },
+      "SAFM": { pdfCode: "SLFM", name: "安全インフラマネージャー", color: "#0f7a72", desc: "地域のインフラを総合的に守る守護神です。広域な視野と現場感覚を両立し、社会の安全基盤を支えます。", job: "インフラ保全・維持管理担当\n公務員の土木職", trivia: "日本の水道管をすべて繋げると約72万km。地球を約18周するほどの長さが私たちの地下に眠っています。" },
+      "SCLP": { pdfCode: "SCAP", name: "挑戦する構造デザイナー", color: "#b54a10", desc: "新しい形の橋や構造物に果敢に挑みます。最先端の技術と深い専門知識で、誰も見たことのない構造を生み出します。", job: "特殊構造・意匠設計エンジニア\n建材メーカーの新素材開発", trivia: "最近は、3Dプリンターを使って数日で家や橋を印刷してしまう技術が土木の世界でも実用化されつつあります。" },
+      "SCLM": { pdfCode: "SCAM", name: "未来構造プロデューサー", color: "#6b33a0", desc: "大胆なアイデアで未来の構造を描き出します。異分野を結びつける広い視野と挑戦心で、インフラの常識を塗り替えます。", job: "先端インフラ技術開発者\nスマートシティのインフラ基本設計", trivia: "宇宙土木という分野があり、月や火星の砂（レゴリス）を使って建物を建てるための研究が真剣に進められています。" },
+      "SCFP": { pdfCode: "SCFP", name: "現場チャレンジャー", color: "#a82020", desc: "実験・新工法・壊すテストなどを愛する現場派です。自分の体と目で限界を試し、技術の最前線を切り開きます。", job: "新工法・実証実験エンジニア\n重機メーカーの実験部門", trivia: "巨大な構造物を壊すための「爆破解体」という技術は、周りの建物に被害を出さずに内側に崩れ落ちるよう緻密に計算されています。" },
+      "SCFM": { pdfCode: "SCFM", name: "革新的インフラリーダー", color: "#1e2d3e", desc: "大規模プロジェクトを動かす発想豊かなリーダーです。現場力と大きなビジョンで、時代を動かすインフラを作ります。", job: "メガプロジェクトマネージャー\n総合商社や海外インフラ開発", trivia: "トンネルを掘る巨大なドリルマシン「シールドマシン」。東京湾アクアラインの建設では、世界最大級のマシンが活躍しました。" },
+      "UALP": { pdfCode: "ULAP", name: "ロジカル都市プランナー", color: "#1d5fa6", desc: "都市の配置や交通を論理的に分析します。データと深い専門性で、暮らしやすい都市の設計図を描きます。", job: "交通・都市データアナリスト\nデータサイエンティスト", trivia: "カーナビやスマホの位置情報は、都市の渋滞を解消するためのシミュレーションデータとして土木工学で大活躍しています。" },
+      "UALM": { pdfCode: "ULAM", name: "安全な街デザイナー", color: "#1a7a55", desc: "歩きやすく安全な街づくりをデザインします。広い視野と安全への配慮で、誰もが暮らしやすい環境を作ります。", job: "都市・交通政策プランナー\nバリアフリー・歩行空間設計担当", trivia: "横断歩道の「音響信号」のメロディは、通りゃんせや故郷の空など、方向によって曲が違うことがあります。" },
+      "UAFP": { pdfCode: "ULFP", name: "まちの現場コーディネーター", color: "#1d6a3a", desc: "地域の人と一緒に街を良くしていく活動家です。現場の声を聞きながら、確実で安全なまちづくりを進めます。", job: "合意形成ファシリテーター\nまちづくり会社の現場担当", trivia: "土木の世界では「合意形成」という言葉がよく使われます。技術的な正しさだけでなく、地域住民との対話が非常に重要です。" },
+      "UAFM": { pdfCode: "ULFM", name: "都市システムマネージャー", color: "#0f7a72", desc: "街全体のしくみを整え、運用するタイプです。広域の視点と現場感覚を持ちながら、都市インフラを安定的に動かします。", job: "広域インフラ運用管理者\nインフラ事業者のネットワーク運用", trivia: "都市の電線は、景観を良くするためや台風時の倒木被害を防ぐために、少しずつ地下に埋められる「無電柱化」が進んでいます。" },
+      "UCLP": { pdfCode: "UCAP", name: "アイデア都市アナリスト", color: "#b54a10", desc: "新サービスや仕掛けの発想を得意とする分析家です。専門的な知識と創造力で、都市の課題に新しい解を見つけます。", job: "都市サービス企画・研究員\nシンクタンクの都市研究員", trivia: "MaaS（Mobility as a Service）という概念により、電車、バス、タクシー、シェアサイクルがひとつのスマホアプリでシームレスに繋がる未来がすぐそこまで来ています。" },
+      "UCLM": { pdfCode: "UCAM", name: "未来都市クリエイター", color: "#6b33a0", desc: "未来の街をデザインするビジョンを持っています。大きな構想力と多様な分野の知識で、誰もが驚く都市の未来を描きます。", job: "アーバンデザイナー\n総合シンクタンクの未来社会構想", trivia: "トヨタが静岡県で作っている「Woven City」のように、自動運転やAI、ロボット工学を前提とした全く新しい都市を一から作るプロジェクトが進んでいます。" },
+      "UCFP": { pdfCode: "UCFP", name: "フィールドイノベーター", color: "#a82020", desc: "現場で新しい公共空間の形を試行錯誤します。実験と挑戦を繰り返しながら、まちに新しい価値を生み出します。", job: "公共空間の利活用プロデューサー\n社会実験・プレイスメイキング企画", trivia: "最近では、道路の一部を一時的にカフェテラスや遊び場に変えてしまう「タクティカル・アーバニズム」という手法が世界中で流行しています。" },
+      "UCFM": { pdfCode: "UCFM", name: "都市変革リーダー", color: "#1e2d3e", desc: "街全体を劇的に新しくする大胆なタイプです。現場での実行力と広いビジョンで、都市の常識を塗り替えます。", job: "エリアマネジメント総合プロデューサー\n都市・インフラ系スタートアップ", trivia: "現在、東京の渋谷や品川周辺では、100年に1度とも言われる大規模な都市再開発が進行しており、数年後には全く違う景色になります。" }
+    }
+  };
+
+  // ==========================================
+  // アプリケーションロジック（エラー回避の安全装置付き）
+  // ==========================================
+
+  async function loadAppData() {
+    if (API_URL) {
+      try {
+        const response = await fetch(API_URL);
+        
+        // GAS設定ミスでログイン画面（HTML）が返ってきた場合のエラー検知
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.indexOf("application/json") === -1) {
+            throw new Error("GASがJSONではなくHTMLを返しました。公開設定が「全員(Anyone)」になっているか確認してください。");
+        }
+
+        const data = await response.json();
+        
+        // データ型が正しい場合のみ上書きする（データ破損時のフリーズ防止）
+        if (data.formUrl) appData.formUrl = data.formUrl;
+        if (data.resultCodeEntryId) appData.resultCodeEntryId = data.resultCodeEntryId;
+        if (data.step1Questions && typeof data.step1Questions === 'object') appData.step1Questions = data.step1Questions;
+        if (data.step2Questions && Array.isArray(data.step2Questions)) appData.step2Questions = data.step2Questions;
+        if (data.resultsData) appData.resultsData = data.resultsData;
+        if (data.shareSettings) appData.shareSettings = data.shareSettings;
+
+      } catch (error) {
+        console.error("外部データの読み込みエラー:", error);
+        alert("データの読み込みに失敗したため、初期設定データで起動します。\n詳細: " + error.message);
+      }
+    }
+    
+    // 描画処理でエラーが起きても必ずローディング画面を消すための try-catch
+    try {
+      renderStep1();
+    } catch(e) { console.error("Step1描画エラー:", e); }
+
+    try {
+      renderStep2();
+    } catch(e) { console.error("Step2描画エラー:", e); }
+    
+    try {
+      if (appData.shareSettings && appData.shareSettings.hashtags) {
+        const displayHashtags = appData.shareSettings.hashtags.split(',').map(tag => `#${tag.trim()}`).join(' ');
+        document.getElementById('share-hashtags').textContent = displayHashtags;
+      }
+    } catch(e) { console.error("ハッシュタグ処理エラー:", e); }
+
+    // 【重要】絶対にローディング画面を隠す
+    const loadingScreen = document.getElementById('loading-screen');
+    if (loadingScreen) loadingScreen.style.display = 'none';
+  }
+
+  function renderStep1() {
+    const container = document.getElementById('step1-dynamic-container');
+    if (!container) return;
+    let html = '';
+    const currentQuestions = appData.step1Questions[CURRENT_MODE];
+
+    // もしGASから不正なデータが来てモードが見つからない場合は終了
+    if (!currentQuestions || !Array.isArray(currentQuestions)) {
+      console.error("現在のモードに対応する質問データがありません:", CURRENT_MODE);
+      return;
+    }
+
+    currentQuestions.forEach(q => {
+      const isDependent = q.dependsOn ? true : false;
+      const initialDisplay = isDependent ? 'none' : 'block';
+      const dependentClass = isDependent ? 'dependent-field' : '';
+      
+      html += `<div class="form-group ${dependentClass}" id="wrapper-${q.id}" style="display: ${initialDisplay};">`;
+      html += `<label for="${q.id}" class="form-label">${q.label}</label>`;
+      
+      const onChangeAttr = `onchange="checkVisibility(); clearStep1Error('${q.id}')" oninput="checkVisibility(); clearStep1Error('${q.id}')"`;
+
+      if (q.type === 'select') {
+        html += `<select id="${q.id}" name="${q.id}" class="form-control" ${onChangeAttr}>`;
+        if (q.options) {
+          q.options.forEach(opt => {
+            const val = opt.value;
+            const isSelected = val === "" ? "disabled selected" : "";
+            html += `<option value="${val}" ${isSelected}>${opt.label}</option>`;
+          });
+        }
+        html += `</select>`;
+      } else if (q.type === 'textarea') {
+        html += `<textarea id="${q.id}" name="${q.id}" class="form-control" placeholder="${q.placeholder || ''}" ${onChangeAttr}></textarea>`;
+      } else {
+        html += `<input type="${q.type}" id="${q.id}" name="${q.id}" class="form-control" placeholder="${q.placeholder || ''}" ${onChangeAttr}>`;
+      }
+      html += `</div>`;
+    });
+
+    container.innerHTML = html;
+    checkVisibility();
+  }
+
+  function checkVisibility() {
+    const currentQuestions = appData.step1Questions[CURRENT_MODE];
+    if (!currentQuestions || !Array.isArray(currentQuestions)) return;
+
+    currentQuestions.forEach(q => {
+      const wrapper = document.getElementById(`wrapper-${q.id}`);
+      const el = document.getElementById(q.id);
+      let isVisible = true;
+
+      if (q.dependsOn) {
+        const parentEl = document.getElementById(q.dependsOn.id);
+        if (parentEl && parentEl.value === q.dependsOn.value) {
+          isVisible = true;
+        } else {
+          isVisible = false;
+          if (el) el.value = '';
+        }
+      }
+
+      if (wrapper) {
+        wrapper.style.display = isVisible ? 'block' : 'none';
+        if (isVisible && !wrapper.classList.contains('slide-down-fade')) {
+          wrapper.classList.add('slide-down-fade');
+        }
+      }
+    });
+  }
+
+  function clearStep1Error(id) {
+    const el = document.getElementById(id);
+    if (el) el.style.borderColor = '';
+  }
+
+  function goToStep2() {
+    let isValid = true;
+    const currentQuestions = appData.step1Questions[CURRENT_MODE];
+    if (!currentQuestions) return;
+    
+    currentQuestions.forEach(q => {
+      const wrapper = document.getElementById(`wrapper-${q.id}`);
+      const el = document.getElementById(q.id);
+      
+      // GASの設定ミスでrequiredが文字列の "true" / "false" になった時のための安全処理
+      const isReq = (q.required === true || String(q.required).toLowerCase() === "true");
+
+      if (wrapper && wrapper.style.display !== 'none' && isReq) {
+        if (el && !el.value.trim()) {
+          isValid = false;
+          el.style.borderColor = 'var(--error-red)';
+        } else if (el) {
+          el.style.borderColor = '';
+        }
+      }
+    });
+
+    if (!isValid) {
+      alert("必須項目が入力されていません。赤枠の項目をご確認ください。");
+      return;
+    }
+
+    document.getElementById('step1-area').style.display = 'none';
+    document.getElementById('step2-area').style.display = 'block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function renderStep2() {
+    const container = document.getElementById('questions-container');
+    if (!container) return;
+    let html = '';
+
+    if (!appData.step2Questions || !Array.isArray(appData.step2Questions)) return;
+
+    appData.step2Questions.forEach((q) => {
+      html += `
+        <div class="content-card question-card" id="card-${q.id}">
+          <div class="question-text">${q.text}</div>
+          <div class="scale-container">
+            ${[1, 2, 3, 4, 5].map(val => {
+              let sizeClass = "size-S";
+              if(val === 1 || val === 5) sizeClass = "size-L";
+              else if(val === 2 || val === 4) sizeClass = "size-M";
+              
+              return `
+              <label class="scale-option" onclick="clearStep2Error('${q.id}')">
+                <input type="radio" name="${q.id}" value="${val}">
+                <div class="scale-bubble ${sizeClass}"></div>
+                <div class="scale-label-wrapper">
+                  <div class="scale-label">${val === 1 ? '全くそう\n思わない' : val === 5 ? '非常に\nそう思う' : ''}</div>
+                </div>
+              </label>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    });
+    container.innerHTML = html;
+  }
+
+  function clearStep2Error(id) {
+    const el = document.getElementById(`card-${id}`);
+    if (el) el.classList.remove('error');
+  }
+
+  function submitQuiz() {
+    let allAnswered = true;
+    let scores = { S:0, U:0, A:0, C:0, L:0, F:0, P:0, M:0 };
+    let counts = { S:0, U:0, A:0, C:0, L:0, F:0, P:0, M:0 };
+    let userAnswers = {};
+
+    if (!appData.step2Questions) return;
+
+    appData.step2Questions.forEach(q => {
+      const selected = document.querySelector(`input[name="${q.id}"]:checked`);
+      const card = document.getElementById(`card-${q.id}`);
+      
+      if (!selected) {
+        if(card) card.classList.add('error');
+        allAnswered = false;
+      } else {
+        if(card) card.classList.remove('error');
+        const val = parseInt(selected.value);
+        scores[q.axis] += val;
+        counts[q.axis] += 1;
+        userAnswers[q.id] = val;
+      }
+    });
+
+    if (!allAnswered) {
+      alert("未回答の質問があります。赤枠の質問にご回答ください。");
+      const errEl = document.querySelector('.question-card.error');
+      if (errEl) errEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+
+    let type = "";
+    type += (scores.S / (counts.S || 1)) >= (scores.U / (counts.U || 1)) ? "S" : "U";
+    type += (scores.A / (counts.A || 1)) >= (scores.C / (counts.C || 1)) ? "A" : "C";
+    type += (scores.L / (counts.L || 1)) >= (scores.F / (counts.F || 1)) ? "L" : "F";
+    type += (scores.P / (counts.P || 1)) >= (scores.M / (counts.M || 1)) ? "P" : "M";
+
+    sendToGoogleForm(userAnswers, appData.resultsData[type].pdfCode);
+    showResult(type);
+  }
+
+  function sendToGoogleForm(step2Answers, resultCode) {
+    const form = document.createElement('form');
+    form.action = appData.formUrl;
+    form.method = 'POST';
+    form.target = 'hidden_iframe';
+    form.style.display = 'none';
+
+    const addInput = (name, value) => {
+      if (!name) return;
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = name;
+      input.value = value;
+      form.appendChild(input);
+    };
+
+    const currentQuestions = appData.step1Questions[CURRENT_MODE];
+    if (currentQuestions) {
+      currentQuestions.forEach(q => {
+        const el = document.getElementById(q.id);
+        const wrapper = document.getElementById(`wrapper-${q.id}`);
+        if (el && wrapper && wrapper.style.display !== 'none') {
+          addInput(q.id, el.value);
+        }
+      });
+    }
+
+    Object.keys(step2Answers).forEach(entryId => {
+      addInput(entryId, step2Answers[entryId]);
+    });
+
+    addInput(appData.resultCodeEntryId, resultCode);
+
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+  }
+
+  function showResult(type) {
+    document.getElementById("step2-area").style.display = "none";
+    const result = appData.resultsData[type];
+    const ra = document.getElementById("result-area");
+    if (!ra || !result) return;
+
+    ra.style.display = "block";
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    document.getElementById("result-hero").style.background = result.color;
+    document.getElementById("result-code").textContent = result.pdfCode + " タイプ";
+    document.getElementById("result-name").textContent = result.name;
+    document.getElementById("result-description").textContent = result.desc;
+    document.getElementById("result-job-text").innerHTML = result.job.replace(/\n/g, '<br>');
+    
+    const triviaText = result.trivia || "土木の世界は奥が深い！";
+    document.getElementById("result-trivia-text").innerHTML = triviaText.replace(/\n/g, '<br>');
+
+    window.currentResult = result;
+  }
+
+  function shareToX() {
+    const result = window.currentResult;
+    if (!result) return;
+    
+    const text = `${appData.shareSettings.xDefaultText}「${result.name}」でした！\n\n`;
+    const url = appData.shareSettings.url;
+    const hashtags = appData.shareSettings.hashtags;
+    
+    const tweetContent = encodeURIComponent(`${text}\n${url}`);
+    const hashtagQuery = hashtags ? `&hashtags=${encodeURIComponent(hashtags)}` : "";
+    
+    const webUrl = `https://twitter.com/intent/tweet?text=${tweetContent}${hashtagQuery}`;
+    window.open(webUrl, '_blank');
+  }
+
+  function shareToInstagram() {
+    const resultArea = document.getElementById('result-area');
+    const hashTags = document.getElementById('share-hashtags');
+    const actionButtons = document.querySelector('.action-buttons');
+    
+    hashTags.style.display = 'block';
+    actionButtons.style.display = 'none';
+    const originalPadding = resultArea.style.paddingBottom;
+    resultArea.style.paddingBottom = "30px";
+
+    html2canvas(resultArea, { 
+      scale: 2,
+      useCORS: true,
+      backgroundColor: "#ffffff" 
+    }).then(canvas => {
+      hashTags.style.display = 'none';
+      actionButtons.style.display = 'block';
+      resultArea.style.paddingBottom = originalPadding;
+      
+      const link = document.createElement('a');
+      link.download = 'cbti_result.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+
+      setTimeout(() => {
+        window.location.href = "instagram://camera";
+      }, 500);
+
+    }).catch(err => {
+      console.error("画像生成エラー:", err);
+      alert("画像の生成に失敗しました。");
+      hashTags.style.display = 'none';
+      actionButtons.style.display = 'block';
+      resultArea.style.paddingBottom = originalPadding;
+    });
+  }
+
+  // ページ読み込み開始
+  window.onload = loadAppData;
+</script>
+</body>
+</html>
