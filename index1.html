@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>土木16タイプ診断 (CBTI) - SIT Civil Circle</title>
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-XXXXXXXXXX');
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Josefin+Sans:wght@300;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+<style>
+  :root {
+    --blue-deep: #1a3a5c;
+    --blue-mid:  #2563a8;
+    --blue-light: #4a9fd4;
+    --blue-pale: #dbeeff;
+    --white: #ffffff;
+    --gray-line: #d8e8f5;
+    --text-main: #222222; 
+    --text-sub: #444444;  
+    --error-red: #d32f2f;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: linear-gradient(160deg, #e8f3ff 0%, #f6faff 50%, #eef6ff 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 20px 10px 20px;
+  }
+
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background-image: linear-gradient(#e2eef9 1px, transparent 1px), linear-gradient(90deg, #e2eef9 1px, transparent 1px);
+    background-size: 40px 40px; pointer-events: none; z-index: 0;
+  }
+
+  #app-container { position: relative; z-index: 1; width: 100%; max-width: 600px; }
+
+  #loading-screen {
+    position: fixed; inset: 0; background: #ffffff; display: flex; flex-direction: column;
+    justify-content: center; align-items: center; z-index: 9999; color: var(--blue-mid); font-weight: 700;
+  }
+  .spinner {
+    width: 40px; height: 40px; border: 4px solid var(--blue-pale); border-top-color: var(--blue-mid);
+    border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .app-header { text-align: center; margin-bottom: 24px; animation: fadeSlideDown 0.5s ease both; }
+  .app-header .label-eng { display: inline-block; font-family: 'Josefin Sans', sans-serif; font-size: 0.7em; font-weight: 600; letter-spacing: 0.2em; color: var(--blue-light); text-transform: uppercase; margin-bottom: 4px; }
+  .app-header h1 { font-family: 'Josefin Sans', sans-serif; font-size: clamp(1.4em, 4.5vw, 2em); font-weight: 700; color: var(--blue-deep); }
+  .app-header h1 span { color: var(--blue-mid); }
+  .app-header .subtitle { margin-top: 4px; font-size: 0.8em; color: var(--text-sub); }
+
+  .content-card { background: var(--white); border-radius: 16px; box-shadow: 0 4px 20px rgba(26,58,92,0.06); padding: 24px 20px; margin-bottom: 20px; }
+
+  #step1-area { animation: fadeSlideUp 0.5s ease both; }
+  .form-group { margin-bottom: 20px; }
+  .form-label { display: block; font-size: 0.95em; font-weight: 700; color: var(--blue-deep); margin-bottom: 8px; }
+  .form-control { width: 100%; padding: 12px 15px; font-size: 1em; font-family: inherit; color: var(--text-main); border: 2px solid var(--gray-line); border-radius: 8px; background-color: #fafcfd; transition: border-color 0.3s; }
+  .form-control:focus { outline: none; border-color: var(--blue-mid); background-color: var(--white); }
+  textarea.form-control { resize: vertical; min-height: 100px; }
+  
+  .dependent-field { margin-top: -10px; padding-top: 10px; border-top: 1px dashed var(--gray-line); }
+  .slide-down-fade { animation: slideDownFade 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+  #step2-area { display: none; animation: fadeSlideUp 0.5s ease both; }
+  .question-card { border: 2px solid transparent; transition: border-color 0.3s; padding-bottom: 25px; }
+  .question-card.error { border-color: var(--error-red); background-color: #fffaf9; }
+  .question-text { font-size: 0.95em; font-weight: 700; color: var(--text-main); line-height: 1.6; margin-bottom: 20px; }
+  
+  .scale-labels { display: flex; justify-content: space-between; font-size: 0.75em; font-weight: 700; color: var(--text-sub); margin-bottom: 15px; padding: 0 10px; }
+  .scale-row { position: relative; display: flex; justify-content: space-between; align-items: center; padding: 0 10px; height: 55px; }
+  .scale-line { position: absolute; top: 50%; left: 20px; right: 20px; height: 4px; background: var(--gray-line); z-index: 0; transform: translateY(-50%); border-radius: 2px; }
+  
+  .scale-option { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; cursor: pointer; width: 25%; }
+  .scale-option input[type="radio"] { position: absolute; opacity: 0; cursor: pointer; }
+  .scale-bubble { border-radius: 50%; background: var(--white); border: 3px solid var(--blue-pale); transition: all 0.2s cubic-bezier(.4,0,.2,1); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+  
+  .scale-bubble.size-L { width: 50px; height: 50px; }
+  .scale-bubble.size-M { width: 36px; height: 36px; }
+  @media (max-width: 400px) {
+    .scale-bubble.size-L { width: 44px; height: 44px; }
+    .scale-bubble.size-M { width: 30px; height: 30px; }
+  }
+  .scale-option input[type="radio"]:checked + .scale-bubble { background: var(--blue-mid); border-color: var(--blue-mid); transform: scale(1.15); box-shadow: 0 4px 12px rgba(37,99,168,0.3); }
+
+  .btn-submit { display: block; width: 100%; padding: 18px; background: var(--blue-deep); color: var(--white); font-family: 'Noto Sans JP', sans-serif; font-size: 1.1em; font-weight: 700; letter-spacing: 0.1em; border: none; border-radius: 12px; cursor: pointer; box-shadow: 0 6px 20px rgba(26,58,92,0.2); transition: background 0.2s, transform 0.1s; }
+  .btn-submit:hover { background: var(--blue-mid); transform: translateY(-2px); }
+  .btn-submit:active { transform: translateY(0); }
+  .submit-btn-wrapper { margin-top: 40px; margin-bottom: 20px; }
+
+  #result-area { display: none; border-radius: 20px; overflow: hidden; box-shadow: 0 16px 48px rgba(26,58,92,0.18); animation: fadeSlideUp 0.5s ease both; background: #ffffff; position: relative; margin-bottom: 20px; }
+  .result-hero { padding: 40px 20px 30px; text-align: center; color: #ffffff; }
+  .result-code-badge { display: inline-block; font-family: 'Josefin Sans', sans-serif; font-size: 0.85em; font-weight: 900; letter-spacing: 0.2em; background: #ffffff; color: #333333; padding: 6px 20px; border-radius: 99px; margin-bottom: 15px; border: 2px solid #eeeeee; }
+  .result-type-name { font-size: clamp(1.4em, 5vw, 2em); font-weight: 900; line-height: 1.3; }
+  .result-body { padding: 30px 20px 20px; }
+  .result-desc { font-size: 1.05em; line-height: 1.7; color: #222222; margin-bottom: 25px; padding-bottom: 25px; border-bottom: 2px solid #e0e8f0; font-weight: 700; }
+
+  .job-box { background: #f4f9ff; border: 2px solid #d8e8f5; border-radius: 12px; padding: 20px; border-left: 8px solid #2563a8; display: flex; flex-direction: column; gap: 15px; }
+  .job-box-section { display: flex; flex-direction: column; }
+  .job-box-divider { height: 2px; background-color: #d8e8f5; margin: 5px 0; }
+  .job-label { font-size: 0.9em; font-weight: 900; color: #1a3a5c; margin-bottom: 8px; display: block; }
+  .job-text { font-size: 1.05em; color: #222222; line-height: 1.6; font-weight: 700; }
+
+  .share-hashtags-area { text-align: center; margin-top: 25px; padding-top: 15px; border-top: 2px dashed #e0e8f0; }
+  .share-hashtags-text { font-size: 1.1em; font-weight: 900; color: #2563a8; letter-spacing: 0.05em; }
+
+  .action-buttons { margin-top: 30px; }
+  .btn-share-x { background: #000000; margin-bottom: 15px; }
+  .btn-share-x:hover { background: #333333; }
+  .btn-share-ig { background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); margin-bottom: 15px; }
+  
+  .official-links { display: flex; justify-content: space-between; gap: 10px; margin-top: 20px; }
+  .btn-link { flex: 1; text-align: center; padding: 14px 5px; border-radius: 8px; font-size: 0.85em; font-weight: 700; text-decoration: none; color: #ffffff; box-shadow: 0 4px 10px rgba(0,0,0,0.1); transition: transform 0.2s; }
+  .btn-link:hover { transform: translateY(-2px); }
+  .bg-ig { background: #E1306C; } .bg-x { background: #14171A; } .bg-hp { background: #2563a8; }
+
+  .app-footer { text-align: left; margin-top: 30px; padding: 20px; color: var(--text-sub); border-top: 1px solid #d8e8f5; background: #ffffff; border-radius: 12px; font-size: 0.75em; line-height: 1.6; }
+  .app-footer h4 { font-size: 1.1em; color: var(--blue-deep); margin-bottom: 6px; }
+  .app-footer p { margin-bottom: 15px; font-weight: 500; }
+  .app-footer .copyright { text-align: center; font-family: 'Josefin Sans', sans-serif; font-size: 1.1em; margin-top: 20px; margin-bottom: 0; }
+
+  @keyframes fadeSlideDown { from { opacity: 0; transform: translateY(-15px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes fadeSlideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes slideDownFade { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+</head>
+<body>
+
+<div id="loading-screen">
+  <div class="spinner"></div>
+  <p>データを読み込んでいます...</p>
+</div>
+
+<div id="app-container">
+  <header class="app-header">
+    <div class="label-eng">SIT CIVIL CIRCLE</div>
+    <h1>土木16タイプ診断 <span>(CBTI)</span></h1>
+    <p class="subtitle">Civil Behavior Type Indicator</p>
+  </header>
+
+  <div id="step1-area">
+    <div class="content-card">
+      <div id="step1-dynamic-container"></div>
+      <button type="button" id="btn-start" class="btn-submit" onclick="goToStep2()">診断を始める</button>
+    </div>
+  </div>
+
+  <div id="step2-area">
+    <div id="questions-container" style="padding-bottom: 20px;"></div>
+    <div class="submit-btn-wrapper">
+      <button type="button" class="btn-submit" id="btn-submit-result" onclick="submitQuiz()">診断結果を見る</button>
+    </div>
+  </div>
+
+  <div id="result-area">
+    <div class="result-hero" id="result-hero">
+      <div class="result-code-badge" id="result-code"></div>
+      <div class="result-type-name" id="result-name"></div>
+    </div>
+    <div class="result-body">
+      <p class="result-desc" id="result-description"></p>
+      <div class="job-box" id="job-box-colored">
+        <div class="job-box-section">
+          <span class="job-label">■ おすすめの職種・就職先イメージ</span>
+          <div class="job-text" id="result-job-text"></div>
+        </div>
+        <div class="job-box-divider"></div>
+        <div class="job-box-section">
+          <span class="job-label">💡 土木豆知識</span>
+          <div class="job-text" id="result-trivia-text"></div>
+        </div>
+      </div>
+      <div class="share-hashtags-area" id="share-hashtags-area" style="display:none;">
+        <div class="share-hashtags-text" id="insta-hashtags-text"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="action-area" style="display:none;">
+    <div class="action-buttons">
+      <button type="button" class="btn-submit btn-share-x" onclick="shareToX()">𝕏 X(Twitter)で結果をシェア</button>
+      <button type="button" class="btn-submit btn-share-ig" onclick="shareToInstagram()">📸 画像を保存してInstagramへ投稿</button>
+      <div class="official-links" id="official-links-container"></div>
+      <button type="button" class="btn-submit" style="margin-top: 25px; background: #5a7a96;" onclick="location.reload()">🔄 もう一度診断する</button>
+    </div>
+  </div>
+
+  <footer class="app-footer">
+    <h4>プライバシーポリシー</h4>
+    <p>当サイトでは、利用状況の分析のためにGoogle Analyticsを利用しています。入力された属性や回答データは、本企画の分析および統計データとしてのみ利用し、個人を特定する情報は一切取得・保持いたしません。</p>
+    <h4>免責事項・商標について</h4>
+    <p>本診断（CBTI）は、土木・都市分野への興味関心の傾向を測る目的で作成された独自のエンターテインメントコンテンツです。MBTI&reg;とは一切関係がありません。</p>
+    <p class="copyright">&copy; 2026 SIT Civil Circle</p>
+  </footer>
+</div>
+
+<script>
+  // ==========================================
+  // URLパラメータからのモード判定
+  // ==========================================
+  const CURRENT_MODE = (function() {
+    const params = new URLSearchParams(window.location.search);
+    const mode = params.get('mode');
+    const validModes = ['omiya', 'shibaura', 'normal', 'spare'];
+    return validModes.includes(mode) ? mode : 'normal';
+  })();
+
+  // ==========================================
+  // 【設定領域】API URLとGoogle Form POST URL
+  // ==========================================
+  const API_URL = "https://script.google.com/macros/s/AKfycbyUuWcbVztLlZYqHhpe48_Xr6DjKiJQb1WKvuCXYF-Nt9sPw3302driB4t82lz4TMgO/exec"; // GASのWebアプリURL
+  const FORM_POST_URL = "https://docs.google.com/forms/d/e/1FAIpQLSdWAEc-QiDXLWQG1_a7qCj_qCkEIfgS1xDZ9JdUHREylKue8w/formResponse";
+
+  // 送信先の entry_id (結果のIDも修正済み)
+  const ENTRY_IDS = {
+    q1: "entry.789122973", q2: "entry.595182903", q3: "entry.1202494646",
+    q4: "entry.1020085423", q5: "entry.1851803580", q6: "entry.599767263",
+    q7: "entry.1230399287", q8: "entry.1373614540", q9: "entry.544609458",
+    q10: "entry.620151219", q11: "entry.609440051", q12: "entry.1289317581",
+    result: "entry.1431082762" 
+  };
+
+  // ==========================================
+  // デフォルトデータ (安全装置)
+  // ==========================================
+  let appData = {
+    configs: {
+      normal: [
+        { entry_id: "entry.111111111", label: "あなたの属性", type: "pulldown", required: true, options: ["高校生", "大学生"] }
+      ]
+    },
+    sns: {
+      normal: { x_text: "土木16タイプ診断をやりました！私の結果は", x_hashtags: "CBTI,土木", insta_hashtags: "#CBTI #土木", insta_url: "#", x_url: "#", hp_url: "#" }
+    },
+    quiz: [
+      { no: 1, type: "S", opposite: "U", question: "巨大な橋やダムの迫力ある姿を見ると、「どうやって作られているんだろう？」と細部まで見入ってしまう。" },
+      { no: 2, type: "U", opposite: "S", question: "地図や航空写真を眺めながら、「ここに新しい道ができたら街がどう変わるか」を想像するのが好きだ。" },
+      { no: 3, type: "U", opposite: "S", question: "完成したときの喜びは、ひとつの美しい構造物を作るよりも、街全体の景色を変えることにあると思う。" },
+      { no: 4, type: "A", opposite: "C", question: "何十年、何百年と続く「当たり前の日常と安全」を、裏方として絶対に守り抜くことに強い責任感を感じる。" },
+      { no: 5, type: "C", opposite: "A", question: "前例のない難工事や、最新のテクノロジーを駆使した「世界初」のプロジェクトに挑んでみたい。" },
+      { no: 6, type: "A", opposite: "C", question: "何か作業をするときは、思い切ったアイデアを試すよりも、ミスがないよう確実に手順を積み上げる方が安心する。" },
+      { no: 7, type: "L", opposite: "F", question: "複雑な計算や緻密な図面を書き上げ、理論的に完璧な答えを導き出す瞬間に達成感を感じる。" },
+      { no: 8, type: "F", opposite: "L", question: "ヘルメットを被って現場に立ち、刻々と変わる状況を判断しながら仲間と家や街を形にしていくのがかっこいいと思う。" },
+      { no: 9, type: "F", opposite: "L", question: "自分のアイデアを形にするなら、PC画面上のシミュレーションよりも、実際に重機が動くリアルな場所で勝負したい。" },
+      { no: 10, type: "P", opposite: "M", question: "「この分野の知識・技術なら誰にも負けない」と言えるような、特定の道を極めたスペシャリストに憧れる。" },
+      { no: 11, type: "M", opposite: "P", question: "専門家や地域住民など、異なる立場の人たちの間に立ち、意見をまとめてプロジェクトを動かす役割が得意だ。" },
+      { no: 12, type: "M", opposite: "P", question: "部分的な完成度を高めることよりも、100年後の未来を見据えて「プロジェクト全体のバランス」を整えることに魅力を感じる。" }
+    ],
+    results: {
+      "SLAP": { type_name: "きっちり構造プランナー", color_code: "#1d5fa6", description: "緻密な計算で安全を根底から支える。", job: "建設コンサルタント", trivia: "明石海峡大橋のケーブルは地球7周半！" }
+    }
+  };
+
+  // ==========================================
+  // アプリケーション起動処理
+  // ==========================================
+  window.onload = async () => {
+    if (API_URL) {
+      try {
+        const response = await fetch(API_URL);
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.indexOf("application/json") !== -1) {
+          const data = await response.json();
+          if (data.configs) appData.configs = data.configs;
+          if (data.quiz) appData.quiz = data.quiz;
+          if (data.results) appData.results = data.results;
+          if (data.sns) appData.sns = data.sns;
+        }
+      } catch (error) {
+        console.error("データ読み込みエラーのためデフォルトを使用します:", error);
+      }
+    }
+    
+    try { renderStep1(); } catch(e) { console.error("Step1生成エラー:", e); }
+    try { renderStep2(); } catch(e) { console.error("Step2生成エラー:", e); }
+    try { renderLinkButtons(); } catch(e) { console.error("リンク生成エラー:", e); }
+
+    // イベントデリゲーションの登録
+    const step1Container = document.getElementById('step1-dynamic-container');
+    if (step1Container) {
+      step1Container.addEventListener('change', function(e) {
+        checkVisibility();
+        if (e.target && e.target.id) clearStep1Error(e.target.id);
+      });
+      step1Container.addEventListener('input', function(e) {
+        checkVisibility();
+        if (e.target && e.target.id) clearStep1Error(e.target.id);
+      });
+    }
+
+    const loadingScreen = document.getElementById('loading-screen');
+    if (loadingScreen) loadingScreen.style.display = 'none';
+  };
+
+  // ==========================================
+  // 1ページ目 (アンケート) の完全動的生成
+  // ==========================================
+  function renderStep1() {
+    const container = document.getElementById('step1-dynamic-container');
+    if (!container) return;
+    
+    let html = '';
+    let currentConfigs = appData.configs[CURRENT_MODE];
+    if (!currentConfigs || !Array.isArray(currentConfigs)) currentConfigs = appData.configs['normal'];
+    if (!currentConfigs && Array.isArray(appData.configs)) currentConfigs = appData.configs;
+    if (!currentConfigs) return;
+
+    currentConfigs.forEach(q => {
+      if (!q || !q.entry_id) return;
+
+      const isDependent = q.dependsOn ? true : false; 
+      const initialDisplay = isDependent ? 'none' : 'block';
+      const dependentClass = isDependent ? 'dependent-field' : '';
+      
+      const isReq = (q.required === true || String(q.required).trim().toLowerCase() === "true" || q.required === 1 || q.required === "1");
+      const rawLabel = q.label || "";
+      const labelText = rawLabel.replace(/\*/g, '').trim() + (isReq ? ` <span style="color:var(--error-red);">*</span>` : "");
+
+      html += `<div class="form-group ${dependentClass}" id="wrapper-${q.entry_id}" style="display: ${initialDisplay};">`;
+      html += `<label for="${q.entry_id}" class="form-label">${labelText}</label>`;
+      
+      if (q.type === 'pulldown' || q.type === 'select') {
+        html += `<select id="${q.entry_id}" name="${q.entry_id}" class="form-control">`;
+        html += `<option value="" disabled selected>選択してください</option>`;
+        
+        let opts = q.options;
+        if (typeof opts === 'string') opts = opts.split(',').map(s => s.trim());
+        if (Array.isArray(opts)) {
+          opts.forEach(opt => { 
+            const val = typeof opt === 'object' ? (opt.value || opt.label) : opt;
+            const lbl = typeof opt === 'object' ? (opt.label || opt.value) : opt;
+            html += `<option value="${val}">${lbl}</option>`; 
+          });
+        }
+        html += `</select>`;
+      } else if (q.type === 'textarea') {
+        html += `<textarea id="${q.entry_id}" name="${q.entry_id}" class="form-control" placeholder="ご自由に記入してください"></textarea>`;
+      } else {
+        html += `<input type="text" id="${q.entry_id}" name="${q.entry_id}" class="form-control" placeholder="ご自由に記入してください">`;
+      }
+      html += `</div>`;
+    });
+
+    container.innerHTML = html;
+    checkVisibility();
+  }
+
+  // 条件分岐（dependsOn）に基づく表示/非表示切替機能
+  function checkVisibility() {
+    let currentConfigs = appData.configs[CURRENT_MODE] || appData.configs['normal'] || [];
+    if (!Array.isArray(currentConfigs)) currentConfigs = appData.configs;
+
+    currentConfigs.forEach(q => {
+      if (q.dependsOn && q.dependsOn.id) {
+        const parentEl = document.getElementById(q.dependsOn.id);
+        const wrapper = document.getElementById(`wrapper-${q.entry_id}`);
+        const el = document.getElementById(q.entry_id);
+
+        if (parentEl && wrapper) {
+          if (parentEl.value === q.dependsOn.value) {
+            if (wrapper.style.display === 'none') {
+                wrapper.style.display = 'block';
+                wrapper.classList.add('slide-down-fade');
+            }
+          } else {
+            wrapper.style.display = 'none';
+            wrapper.classList.remove('slide-down-fade');
+            if (el) el.value = '';
+          }
+        }
+      }
+    });
+  }
+
+  function clearStep1Error(id) {
+    const el = document.getElementById(id);
+    if (el) el.style.borderColor = '';
+  }
+
+  // 1ページ目の必須チェックと画面遷移
+  function goToStep2() {
+    let isValid = true;
+    let currentConfigs = appData.configs[CURRENT_MODE] || appData.configs['normal'];
+    if (!currentConfigs && Array.isArray(appData.configs)) currentConfigs = appData.configs;
+    if (!currentConfigs) return;
+
+    currentConfigs.forEach(q => {
+      if (!q || !q.entry_id) return;
+      const el = document.getElementById(q.entry_id);
+      const wrapper = document.getElementById(`wrapper-${q.entry_id}`);
+      const isReq = (q.required === true || String(q.required).trim().toLowerCase() === "true" || q.required === 1 || q.required === "1");
+
+      if (isReq && wrapper && wrapper.style.display !== 'none') {
+        const val = el ? (el.value || "") : "";
+        if (val.trim() === '') {
+          isValid = false;
+          if(el) el.style.borderColor = 'var(--error-red)';
+        } else {
+          if(el) el.style.borderColor = '';
+        }
+      }
+    });
+
+    if (!isValid) {
+      alert("必須項目が選択・入力されていません。赤枠の箇所をご確認ください。");
+      return;
+    }
+
+    document.getElementById('step1-area').style.display = 'none';
+    document.getElementById('step2-area').style.display = 'block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // ==========================================
+  // UI生成処理：Step 2 (診断問題 - 4段階UI)
+  // ==========================================
+  function renderStep2() {
+    const container = document.getElementById('questions-container');
+    if (!container || !appData.quiz) return;
+    let html = '';
+
+    appData.quiz.forEach((q) => {
+      const qKey = `q${q.no}`;
+      const entryId = ENTRY_IDS[qKey] || q.entry_id;
+
+      html += `
+        <div class="content-card question-card" id="card-${entryId}">
+          <div class="question-text">${q.question}</div>
+          <div class="scale-labels">
+            <span>全くそう<br>思わない</span>
+            <span>非常に<br>そう思う</span>
+          </div>
+          <div class="scale-row">
+            <div class="scale-line"></div>
+            <label class="scale-option" onclick="clearStep2Error('${entryId}')">
+              <input type="radio" name="${entryId}" value="1">
+              <div class="scale-bubble size-L"></div>
+            </label>
+            <label class="scale-option" onclick="clearStep2Error('${entryId}')">
+              <input type="radio" name="${entryId}" value="2">
+              <div class="scale-bubble size-M"></div>
+            </label>
+            <label class="scale-option" onclick="clearStep2Error('${entryId}')">
+              <input type="radio" name="${entryId}" value="3">
+              <div class="scale-bubble size-M"></div>
+            </label>
+            <label class="scale-option" onclick="clearStep2Error('${entryId}')">
+              <input type="radio" name="${entryId}" value="4">
+              <div class="scale-bubble size-L"></div>
+            </label>
+          </div>
+        </div>
+      `;
+    });
+    container.innerHTML = html;
+  }
+
+  function clearStep2Error(id) {
+    const el = document.getElementById(`card-${id}`);
+    if (el) el.classList.remove('error');
+  }
+
+  function renderLinkButtons() {
+    const linkContainer = document.getElementById('official-links-container');
+    const snsData = appData.sns[CURRENT_MODE] || appData.sns['normal'];
+    if (!linkContainer || !snsData) return;
+
+    let html = '';
+    if(snsData.insta_url && snsData.insta_url.length > 2) html += `<a href="${snsData.insta_url}" target="_blank" class="btn-link bg-ig">Instagram</a>`;
+    if(snsData.x_url && snsData.x_url.length > 2) html += `<a href="${snsData.x_url}" target="_blank" class="btn-link bg-x">X(Twitter)</a>`;
+    if(snsData.hp_url && snsData.hp_url.length > 2) html += `<a href="${snsData.hp_url}" target="_blank" class="btn-link bg-hp">公式HP</a>`;
+    
+    linkContainer.innerHTML = html;
+  }
+
+  // ==========================================
+  // 診断ロジック（4段階対角スコアリング）
+  // ==========================================
+  function submitQuiz() {
+    let allAnswered = true;
+    let scores = { S:0, U:0, A:0, C:0, L:0, F:0, P:0, M:0 };
+    let userAnswers = {};
+
+    appData.quiz.forEach(q => {
+      const qKey = `q${q.no}`;
+      const entryId = ENTRY_IDS[qKey] || q.entry_id;
+      const selected = document.querySelector(`input[name="${entryId}"]:checked`);
+      const card = document.getElementById(`card-${entryId}`);
+      
+      if (!selected) {
+        if(card) card.classList.add('error');
+        allAnswered = false;
+      } else {
+        if(card) card.classList.remove('error');
+        const val = parseInt(selected.value);
+        
+        if (val === 1) scores[q.opposite] += 2;
+        else if (val === 2) scores[q.opposite] += 1;
+        else if (val === 3) scores[q.type] += 1;
+        else if (val === 4) scores[q.type] += 2;
+        
+        userAnswers[entryId] = val; 
+      }
+    });
+
+    if (!allAnswered) {
+      alert("未回答の質問があります。赤枠の箇所をご確認ください。");
+      const errEl = document.querySelector('.question-card.error');
+      if (errEl) errEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+
+    let rawType = "";
+    rawType += (scores.S >= scores.U) ? "S" : "U";
+    rawType += (scores.A >= scores.C) ? "A" : "C";
+    rawType += (scores.L >= scores.F) ? "L" : "F";
+    rawType += (scores.P >= scores.M) ? "P" : "M";
+
+    let resultData = null;
+    let finalTypeCode = rawType; 
+    
+    if (appData.results) {
+      const targetChars = rawType.toUpperCase().split('').sort().join('');
+      for (const key in appData.results) {
+        if (key.toUpperCase().split('').sort().join('') === targetChars) {
+          resultData = appData.results[key];
+          finalTypeCode = key; 
+          break;
+        }
+      }
+    }
+
+    sendToGoogleForm(userAnswers, finalTypeCode, resultData);
+  }
+
+  // ==========================================
+  // Google Form への送信処理 (fetch API)
+  // ==========================================
+  function sendToGoogleForm(step2Answers, typeCode, resultData) {
+    const btn = document.getElementById('btn-submit-result');
+    if (btn) { btn.disabled = true; btn.textContent = "送信中..."; }
+
+    const formData = new FormData();
+
+    // ① 1ページ目の回答データ（動的にappend）
+    let currentConfigs = appData.configs[CURRENT_MODE] || appData.configs['normal'];
+    if (!currentConfigs && Array.isArray(appData.configs)) currentConfigs = appData.configs;
+    if (currentConfigs) {
+      currentConfigs.forEach(q => {
+        if (!q || !q.entry_id) return;
+        const el = document.getElementById(q.entry_id);
+        const wrapper = document.getElementById(`wrapper-${q.entry_id}`);
+        // 表示されていて、かつ入力がある場合のみ送信
+        if (el && wrapper && wrapper.style.display !== 'none' && el.value) {
+          formData.append(q.entry_id, el.value);
+        }
+      });
+    }
+
+    // ② 診断の回答 (Q1〜Q12) の固定IDへのマッピング
+    Object.keys(step2Answers).forEach(entryId => { 
+      formData.append(entryId, step2Answers[entryId]); 
+    });
+    
+    // ③ 診断結果 (4文字のタイプ名) を指定の固定IDへマッピング
+    formData.append('entry.1431082762', typeCode);
+
+    // fetchによる送信処理 (CORSエラー回避のため mode: 'no-cors' を指定)
+    fetch(FORM_POST_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      body: formData
+    })
+    .then(response => {
+      // no-cors の場合は opaque レスポンスとなり詳細ステータスは読み取れないが、
+      // ネットワークレベルのエラーに落ちなければ成功とみなす
+      console.log('送信処理完了');
+    })
+    .catch(error => {
+      console.error('送信エラー:', error);
+      alert('データの一部送信に失敗した可能性がありますが、結果は表示されます。');
+    })
+    .finally(() => {
+      // 送信の成否に関わらず、ユーザーには結果画面を表示する
+      if (btn) { btn.disabled = false; btn.textContent = "診断結果を見る"; }
+      showResult(resultData, typeCode);
+    });
+  }
+
+  // ==========================================
+  // 診断結果の表示処理
+  // ==========================================
+  function showResult(result, typeCode) {
+    document.getElementById("step2-area").style.display = "none";
+    
+    if (!result) {
+      result = {
+        type_name: "判定エラー (" + typeCode + ")", color_code: "#2563a8",
+        description: "データが見つかりません。シートの「判定コード」列を確認してください。",
+        job: "設定エラー", trivia: "設定エラー"
+      };
+    }
+
+    const ra = document.getElementById("result-area");
+    ra.style.display = "block";
+    document.getElementById("action-area").style.display = "block";
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    document.getElementById("result-hero").style.background = result.color_code || "#2563a8";
+    document.getElementById("job-box-colored").style.borderLeftColor = result.color_code || "#2563a8";
+
+    document.getElementById("result-code").textContent = typeCode + " タイプ";
+    document.getElementById("result-name").textContent = result.type_name || "";
+    document.getElementById("result-description").textContent = result.description || "";
+    document.getElementById("result-job-text").innerHTML = (result.job || "").replace(/\n/g, '<br>');
+    document.getElementById("result-trivia-text").innerHTML = (result.trivia || "").replace(/\n/g, '<br>');
+
+    const snsData = appData.sns[CURRENT_MODE] || appData.sns['normal'];
+    if (snsData && snsData.insta_hashtags) {
+      document.getElementById('share-hashtags-area').style.display = 'block';
+      document.getElementById('insta-hashtags-text').textContent = snsData.insta_hashtags;
+    }
+
+    window.currentResult = result;
+  }
+
+  // ==========================================
+  // SNSシェア・保存機能
+  // ==========================================
+  function shareToX() {
+    const result = window.currentResult;
+    const snsData = appData.sns[CURRENT_MODE] || appData.sns['normal'];
+    if (!result || !snsData) return;
+    
+    const text = `${snsData.x_text}「${result.type_name}」でした！\n\n`;
+    const shareUrl = window.location.origin + window.location.pathname; 
+    const hashtags = snsData.x_hashtags;
+    
+    const tweetContent = encodeURIComponent(`${text}\n${shareUrl}`);
+    const hashtagQuery = hashtags ? `&hashtags=${encodeURIComponent(hashtags)}` : "";
+    window.open(`https://twitter.com/intent/tweet?text=${tweetContent}${hashtagQuery}`, '_blank');
+  }
+
+  function shareToInstagram() {
+    const resultArea = document.getElementById('result-area');
+    const originalPadding = resultArea.style.paddingBottom;
+    resultArea.style.paddingBottom = "30px"; 
+
+    html2canvas(resultArea, { 
+      scale: 2, 
+      useCORS: true, 
+      backgroundColor: "#ffffff" 
+    }).then(canvas => {
+      resultArea.style.paddingBottom = originalPadding;
+      
+      const link = document.createElement('a');
+      link.download = 'cbti_result.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+
+      setTimeout(() => { window.location.href = "instagram://camera"; }, 500);
+    }).catch(err => {
+      console.error("画像生成エラー:", err);
+      alert("画像の生成に失敗しました。");
+      resultArea.style.paddingBottom = originalPadding;
+    });
+  }
+</script>
+</body>
+</html>
