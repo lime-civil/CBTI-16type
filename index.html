@@ -444,7 +444,7 @@
           <div class="question-text">${q.question}</div>
           <div class="scale-labels">
             <span>全くそう<br>思わない</span>
-            <span>非常に<br>そう思う</span>
+            <span>とても<br>そう思う</span>
           </div>
           <div class="scale-row">
             <div class="scale-line"></div>
@@ -483,7 +483,7 @@
 
     let html = '';
     if(snsData.insta_url && snsData.insta_url.length > 2) html += `<a href="${snsData.insta_url}" target="_blank" class="btn-link bg-ig">Instagram</a>`;
-    if(snsData.x_url && snsData.x_url.length > 2) html += `<a href="${snsData.x_url}" target="_blank" class="btn-link bg-x">X(Twitter)</a>`;
+    if(snsData.x_url && snsData.x_url.length > 2) html += `<a href="${snsData.x_url}" target="_blank" class="btn-link bg-x">X</a>`;
     if(snsData.hp_url && snsData.hp_url.length > 2) html += `<a href="${snsData.hp_url}" target="_blank" class="btn-link bg-hp">公式HP</a>`;
     
     linkContainer.innerHTML = html;
