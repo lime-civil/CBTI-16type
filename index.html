@@ -15,7 +15,8 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Josefin+Sans:wght@300;600;700&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.3.3/html2canvas.min.js"></script>
 
 <style>
   :root {
@@ -51,7 +52,7 @@
   #app-container { position: relative; z-index: 1; width: 100%; max-width: 600px; }
 
   #loading-screen {
-    position: fixed; inset: 0; background: #ffffff; display: flex; flex-direction: column;
+    position: fixed; inset: 0; background: rgba(255, 255, 255, 0.95); display: flex; flex-direction: column;
     justify-content: center; align-items: center; z-index: 9999; color: var(--blue-mid); font-weight: 700;
   }
   .spinner {
@@ -102,20 +103,29 @@
   .btn-submit { display: block; width: 100%; padding: 18px; background: var(--blue-deep); color: var(--white); font-family: 'Noto Sans JP', sans-serif; font-size: 1.1em; font-weight: 700; letter-spacing: 0.1em; border: none; border-radius: 12px; cursor: pointer; box-shadow: 0 6px 20px rgba(26,58,92,0.2); transition: background 0.2s, transform 0.1s; }
   .btn-submit:hover { background: var(--blue-mid); transform: translateY(-2px); }
   .btn-submit:active { transform: translateY(0); }
+  .btn-submit:disabled { background: #88a5c2; cursor: not-allowed; transform: none; box-shadow: none; }
   .submit-btn-wrapper { margin-top: 40px; margin-bottom: 20px; }
 
   #result-area { display: none; border-radius: 20px; overflow: hidden; box-shadow: 0 16px 48px rgba(26,58,92,0.18); animation: fadeSlideUp 0.5s ease both; background: #ffffff; position: relative; margin-bottom: 20px; }
   .result-hero { padding: 40px 20px 30px; text-align: center; color: #ffffff; }
   .result-code-badge { display: inline-block; font-family: 'Josefin Sans', sans-serif; font-size: 0.85em; font-weight: 900; letter-spacing: 0.2em; background: #ffffff; color: #333333; padding: 6px 20px; border-radius: 99px; margin-bottom: 15px; border: 2px solid #eeeeee; }
-  .result-type-name { font-size: clamp(1.4em, 5vw, 2em); font-weight: 900; line-height: 1.3; }
+  
+  #default-title-layout .result-type-name { font-size: clamp(1.4em, 5vw, 2em); font-weight: 900; line-height: 1.3; color: inherit; }
+  
   .result-body { padding: 30px 20px 20px; }
-  .result-desc { font-size: 1.05em; line-height: 1.7; color: #222222; margin-bottom: 25px; padding-bottom: 25px; border-bottom: 2px solid #e0e8f0; font-weight: 700; }
+  #result-description { font-size: 1.05em; line-height: 1.7; color: var(--text-main); margin-bottom: 25px; padding-bottom: 25px; border-bottom: 2px solid #e0e8f0; font-weight: 700; }
+
+  .profile-card { background: #ffffff; border: 2px solid #d8e8f5; border-radius: 16px; padding: 20px; display: flex; gap: 20px; align-items: center; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(26,58,92,0.04); }
+  .avatar-frame { width: 110px; height: 110px; border-radius: 16px; object-fit: cover; border: 4px solid var(--blue-pale); flex-shrink: 0; background-color: #f4f9ff; }
+  .profile-text { display: flex; flex-direction: column; text-align: left; gap: 8px; }
+  .profile-text .type-name { font-size: 1.35em; font-weight: 900; color: var(--blue-deep); line-height: 1.2; }
+  .profile-text .catchphrase { font-size: 0.95em; color: var(--text-main); line-height: 1.6; font-weight: 700; }
 
   .job-box { background: #f4f9ff; border: 2px solid #d8e8f5; border-radius: 12px; padding: 20px; border-left: 8px solid #2563a8; display: flex; flex-direction: column; gap: 15px; }
   .job-box-section { display: flex; flex-direction: column; }
   .job-box-divider { height: 2px; background-color: #d8e8f5; margin: 5px 0; }
   .job-label { font-size: 0.9em; font-weight: 900; color: #1a3a5c; margin-bottom: 8px; display: block; }
-  .job-text { font-size: 1.05em; color: #222222; line-height: 1.6; font-weight: 700; }
+  .job-text { font-size: 1.05em; color: var(--text-main); line-height: 1.6; font-weight: 700; }
 
   .share-hashtags-area { text-align: center; margin-top: 25px; padding-top: 15px; border-top: 2px dashed #e0e8f0; }
   .share-hashtags-text { font-size: 1.1em; font-weight: 900; color: #2563a8; letter-spacing: 0.05em; }
@@ -144,7 +154,7 @@
 
 <div id="loading-screen">
   <div class="spinner"></div>
-  <p>データを読み込んでいます...</p>
+  <p id="loading-text">データを読み込んでいます...</p>
 </div>
 
 <div id="app-container">
@@ -171,10 +181,22 @@
   <div id="result-area">
     <div class="result-hero" id="result-hero">
       <div class="result-code-badge" id="result-code"></div>
-      <div class="result-type-name" id="result-name"></div>
+      <div id="default-title-layout">
+        <div class="result-type-name" id="result-name"></div>
+      </div>
     </div>
+    
     <div class="result-body">
       <p class="result-desc" id="result-description"></p>
+      
+      <div id="profile-card-layout" class="profile-card" style="display: none;">
+        <img id="avatar-img" class="avatar-frame" src="" alt="Avatar">
+        <div class="profile-text">
+          <div class="type-name" id="profile-name"></div>
+          <div class="catchphrase" id="profile-desc"></div>
+        </div>
+      </div>
+
       <div class="job-box" id="job-box-colored">
         <div class="job-box-section">
           <span class="job-label">■ おすすめの職種・就職先イメージ</span>
@@ -195,7 +217,7 @@
   <div id="action-area" style="display:none;">
     <div class="action-buttons">
       <button type="button" class="btn-submit btn-share-x" onclick="shareToX()">𝕏 X(Twitter)で結果をシェア</button>
-      <button type="button" class="btn-submit btn-share-ig" onclick="shareToInstagram()">📸 画像を保存してInstagramへ投稿</button>
+      <button type="button" class="btn-submit btn-share-ig" id="btn-ig-share" onclick="shareToInstagram()">📸 画像をシェア / 保存する</button>
       <div class="official-links" id="official-links-container"></div>
       <button type="button" class="btn-submit" style="margin-top: 25px; background: #5a7a96;" onclick="location.reload()">🔄 もう一度診断する</button>
     </div>
@@ -211,9 +233,6 @@
 </div>
 
 <script>
-  // ==========================================
-  // URLパラメータからのモード判定
-  // ==========================================
   const CURRENT_MODE = (function() {
     const params = new URLSearchParams(window.location.search);
     const mode = params.get('mode');
@@ -221,13 +240,9 @@
     return validModes.includes(mode) ? mode : 'normal';
   })();
 
-  // ==========================================
-  // 【設定領域】API URLとGoogle Form POST URL
-  // ==========================================
-  const API_URL = "https://script.google.com/macros/s/AKfycbyUuWcbVztLlZYqHhpe48_Xr6DjKiJQb1WKvuCXYF-Nt9sPw3302driB4t82lz4TMgO/exec"; // GASのWebアプリURL
+  const API_URL = "https://script.google.com/macros/s/AKfycbyc77PzdRbJZlwuqj-szAWXfT_Xrqo0hHuO4_RV_6FJgyR3oevAIHAHwkGvB8CaYtm7/exec"; 
   const FORM_POST_URL = "https://docs.google.com/forms/d/e/1FAIpQLSdWAEc-QiDXLWQG1_a7qCj_qCkEIfgS1xDZ9JdUHREylKue8w/formResponse";
 
-  // 送信先の entry_id (結果のIDも修正済み)
   const ENTRY_IDS = {
     q1: "entry.789122973", q2: "entry.595182903", q3: "entry.1202494646",
     q4: "entry.1020085423", q5: "entry.1851803580", q6: "entry.599767263",
@@ -236,40 +251,8 @@
     result: "entry.1431082762" 
   };
 
-  // ==========================================
-  // デフォルトデータ (安全装置)
-  // ==========================================
-  let appData = {
-    configs: {
-      normal: [
-        { entry_id: "entry.111111111", label: "あなたの属性", type: "pulldown", required: true, options: ["高校生", "大学生"] }
-      ]
-    },
-    sns: {
-      normal: { x_text: "土木16タイプ診断をやりました！私の結果は", x_hashtags: "CBTI,土木", insta_hashtags: "#CBTI #土木", insta_url: "#", x_url: "#", hp_url: "#" }
-    },
-    quiz: [
-      { no: 1, type: "S", opposite: "U", question: "巨大な橋やダムの迫力ある姿を見ると、「どうやって作られているんだろう？」と細部まで見入ってしまう。" },
-      { no: 2, type: "U", opposite: "S", question: "地図や航空写真を眺めながら、「ここに新しい道ができたら街がどう変わるか」を想像するのが好きだ。" },
-      { no: 3, type: "U", opposite: "S", question: "完成したときの喜びは、ひとつの美しい構造物を作るよりも、街全体の景色を変えることにあると思う。" },
-      { no: 4, type: "A", opposite: "C", question: "何十年、何百年と続く「当たり前の日常と安全」を、裏方として絶対に守り抜くことに強い責任感を感じる。" },
-      { no: 5, type: "C", opposite: "A", question: "前例のない難工事や、最新のテクノロジーを駆使した「世界初」のプロジェクトに挑んでみたい。" },
-      { no: 6, type: "A", opposite: "C", question: "何か作業をするときは、思い切ったアイデアを試すよりも、ミスがないよう確実に手順を積み上げる方が安心する。" },
-      { no: 7, type: "L", opposite: "F", question: "複雑な計算や緻密な図面を書き上げ、理論的に完璧な答えを導き出す瞬間に達成感を感じる。" },
-      { no: 8, type: "F", opposite: "L", question: "ヘルメットを被って現場に立ち、刻々と変わる状況を判断しながら仲間と家や街を形にしていくのがかっこいいと思う。" },
-      { no: 9, type: "F", opposite: "L", question: "自分のアイデアを形にするなら、PC画面上のシミュレーションよりも、実際に重機が動くリアルな場所で勝負したい。" },
-      { no: 10, type: "P", opposite: "M", question: "「この分野の知識・技術なら誰にも負けない」と言えるような、特定の道を極めたスペシャリストに憧れる。" },
-      { no: 11, type: "M", opposite: "P", question: "専門家や地域住民など、異なる立場の人たちの間に立ち、意見をまとめてプロジェクトを動かす役割が得意だ。" },
-      { no: 12, type: "M", opposite: "P", question: "部分的な完成度を高めることよりも、100年後の未来を見据えて「プロジェクト全体のバランス」を整えることに魅力を感じる。" }
-    ],
-    results: {
-      "SLAP": { type_name: "きっちり構造プランナー", color_code: "#1d5fa6", description: "緻密な計算で安全を根底から支える。", job: "建設コンサルタント", trivia: "明石海峡大橋のケーブルは地球7周半！" }
-    }
-  };
+  let appData = { configs: {}, sns: {}, quiz: [], results: {} };
 
-  // ==========================================
-  // アプリケーション起動処理
-  // ==========================================
   window.onload = async () => {
     if (API_URL) {
       try {
@@ -283,15 +266,13 @@
           if (data.sns) appData.sns = data.sns;
         }
       } catch (error) {
-        console.error("データ読み込みエラーのためデフォルトを使用します:", error);
+        console.error("データ読み込みエラー:", error);
       }
     }
-    
     try { renderStep1(); } catch(e) { console.error("Step1生成エラー:", e); }
     try { renderStep2(); } catch(e) { console.error("Step2生成エラー:", e); }
     try { renderLinkButtons(); } catch(e) { console.error("リンク生成エラー:", e); }
 
-    // イベントデリゲーションの登録
     const step1Container = document.getElementById('step1-dynamic-container');
     if (step1Container) {
       step1Container.addEventListener('change', function(e) {
@@ -308,37 +289,24 @@
     if (loadingScreen) loadingScreen.style.display = 'none';
   };
 
-  // ==========================================
-  // 1ページ目 (アンケート) の完全動的生成
-  // ==========================================
   function renderStep1() {
     const container = document.getElementById('step1-dynamic-container');
     if (!container) return;
-    
     let html = '';
-    let currentConfigs = appData.configs[CURRENT_MODE];
-    if (!currentConfigs || !Array.isArray(currentConfigs)) currentConfigs = appData.configs['normal'];
-    if (!currentConfigs && Array.isArray(appData.configs)) currentConfigs = appData.configs;
-    if (!currentConfigs) return;
-
+    let currentConfigs = appData.configs[CURRENT_MODE] || appData.configs['normal'] || [];
     currentConfigs.forEach(q => {
       if (!q || !q.entry_id) return;
-
       const isDependent = q.dependsOn ? true : false; 
       const initialDisplay = isDependent ? 'none' : 'block';
       const dependentClass = isDependent ? 'dependent-field' : '';
-      
-      const isReq = (q.required === true || String(q.required).trim().toLowerCase() === "true" || q.required === 1 || q.required === "1");
+      const isReq = (q.required === true || String(q.required).trim().toLowerCase() === "true");
       const rawLabel = q.label || "";
       const labelText = rawLabel.replace(/\*/g, '').trim() + (isReq ? ` <span style="color:var(--error-red);">*</span>` : "");
-
       html += `<div class="form-group ${dependentClass}" id="wrapper-${q.entry_id}" style="display: ${initialDisplay};">`;
       html += `<label for="${q.entry_id}" class="form-label">${labelText}</label>`;
-      
       if (q.type === 'pulldown' || q.type === 'select') {
         html += `<select id="${q.entry_id}" name="${q.entry_id}" class="form-control">`;
         html += `<option value="" disabled selected>選択してください</option>`;
-        
         let opts = q.options;
         if (typeof opts === 'string') opts = opts.split(',').map(s => s.trim());
         if (Array.isArray(opts)) {
@@ -356,33 +324,21 @@
       }
       html += `</div>`;
     });
-
     container.innerHTML = html;
     checkVisibility();
   }
 
-  // 条件分岐（dependsOn）に基づく表示/非表示切替機能
   function checkVisibility() {
     let currentConfigs = appData.configs[CURRENT_MODE] || appData.configs['normal'] || [];
-    if (!Array.isArray(currentConfigs)) currentConfigs = appData.configs;
-
     currentConfigs.forEach(q => {
       if (q.dependsOn && q.dependsOn.id) {
         const parentEl = document.getElementById(q.dependsOn.id);
         const wrapper = document.getElementById(`wrapper-${q.entry_id}`);
         const el = document.getElementById(q.entry_id);
-
         if (parentEl && wrapper) {
           if (parentEl.value === q.dependsOn.value) {
-            if (wrapper.style.display === 'none') {
-                wrapper.style.display = 'block';
-                wrapper.classList.add('slide-down-fade');
-            }
-          } else {
-            wrapper.style.display = 'none';
-            wrapper.classList.remove('slide-down-fade');
-            if (el) el.value = '';
-          }
+            if (wrapper.style.display === 'none') { wrapper.style.display = 'block'; wrapper.classList.add('slide-down-fade'); }
+          } else { wrapper.style.display = 'none'; wrapper.classList.remove('slide-down-fade'); if (el) el.value = ''; }
         }
       }
     });
@@ -393,77 +349,40 @@
     if (el) el.style.borderColor = '';
   }
 
-  // 1ページ目の必須チェックと画面遷移
   function goToStep2() {
     let isValid = true;
-    let currentConfigs = appData.configs[CURRENT_MODE] || appData.configs['normal'];
-    if (!currentConfigs && Array.isArray(appData.configs)) currentConfigs = appData.configs;
-    if (!currentConfigs) return;
-
+    let currentConfigs = appData.configs[CURRENT_MODE] || appData.configs['normal'] || [];
     currentConfigs.forEach(q => {
       if (!q || !q.entry_id) return;
       const el = document.getElementById(q.entry_id);
       const wrapper = document.getElementById(`wrapper-${q.entry_id}`);
-      const isReq = (q.required === true || String(q.required).trim().toLowerCase() === "true" || q.required === 1 || q.required === "1");
-
+      const isReq = (q.required === true || String(q.required).trim().toLowerCase() === "true");
       if (isReq && wrapper && wrapper.style.display !== 'none') {
-        const val = el ? (el.value || "") : "";
-        if (val.trim() === '') {
-          isValid = false;
-          if(el) el.style.borderColor = 'var(--error-red)';
-        } else {
-          if(el) el.style.borderColor = '';
-        }
+        if (!el || el.value.trim() === '') { isValid = false; if(el) el.style.borderColor = 'var(--error-red)'; } else { if(el) el.style.borderColor = ''; }
       }
     });
-
-    if (!isValid) {
-      alert("必須項目が選択・入力されていません。赤枠の箇所をご確認ください。");
-      return;
-    }
-
+    if (!isValid) return alert("必須項目が選択・入力されていません。赤枠の箇所をご確認ください。");
     document.getElementById('step1-area').style.display = 'none';
     document.getElementById('step2-area').style.display = 'block';
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  // ==========================================
-  // UI生成処理：Step 2 (診断問題 - 4段階UI)
-  // ==========================================
   function renderStep2() {
     const container = document.getElementById('questions-container');
     if (!container || !appData.quiz) return;
     let html = '';
-
     appData.quiz.forEach((q) => {
-      const qKey = `q${q.no}`;
-      const entryId = ENTRY_IDS[qKey] || q.entry_id;
-
+      const entryId = ENTRY_IDS[`q${q.no}`] || q.entry_id;
       html += `
         <div class="content-card question-card" id="card-${entryId}">
           <div class="question-text">${q.question}</div>
-          <div class="scale-labels">
-            <span>全くそう<br>思わない</span>
-            <span>とても<br>そう思う</span>
-          </div>
+          <div class="scale-labels"><span>全くそう<br>思わない</span><span>非常に<br>そう思う</span></div>
           <div class="scale-row">
             <div class="scale-line"></div>
-            <label class="scale-option" onclick="clearStep2Error('${entryId}')">
-              <input type="radio" name="${entryId}" value="1">
-              <div class="scale-bubble size-L"></div>
-            </label>
-            <label class="scale-option" onclick="clearStep2Error('${entryId}')">
-              <input type="radio" name="${entryId}" value="2">
-              <div class="scale-bubble size-M"></div>
-            </label>
-            <label class="scale-option" onclick="clearStep2Error('${entryId}')">
-              <input type="radio" name="${entryId}" value="3">
-              <div class="scale-bubble size-M"></div>
-            </label>
-            <label class="scale-option" onclick="clearStep2Error('${entryId}')">
-              <input type="radio" name="${entryId}" value="4">
-              <div class="scale-bubble size-L"></div>
-            </label>
+            <label class="scale-option" onclick="clearStep2Error('${entryId}')"><input type="radio" name="${entryId}" value="1"><div class="scale-bubble size-L"></div></label>
+            <label class="scale-option" onclick="clearStep2Error('${entryId}')"><input type="radio" name="${entryId}" value="2"><div class="scale-bubble size-M"></div></label>
+            <label class="scale-option" onclick="clearStep2Error('${entryId}')"><input type="radio" name="${entryId}" value="3"><div class="scale-bubble size-M"></div></label>
+            <label class="scale-option" onclick="clearStep2Error('${entryId}')"><input type="radio" name="${entryId}" value="4"><div class="scale-bubble size-L"></div></label>
           </div>
         </div>
       `;
@@ -480,206 +399,167 @@
     const linkContainer = document.getElementById('official-links-container');
     const snsData = appData.sns[CURRENT_MODE] || appData.sns['normal'];
     if (!linkContainer || !snsData) return;
-
     let html = '';
     if(snsData.insta_url && snsData.insta_url.length > 2) html += `<a href="${snsData.insta_url}" target="_blank" class="btn-link bg-ig">Instagram</a>`;
-    if(snsData.x_url && snsData.x_url.length > 2) html += `<a href="${snsData.x_url}" target="_blank" class="btn-link bg-x">X</a>`;
+    if(snsData.x_url && snsData.x_url.length > 2) html += `<a href="${snsData.x_url}" target="_blank" class="btn-link bg-x">X(Twitter)</a>`;
     if(snsData.hp_url && snsData.hp_url.length > 2) html += `<a href="${snsData.hp_url}" target="_blank" class="btn-link bg-hp">公式HP</a>`;
-    
     linkContainer.innerHTML = html;
   }
 
-  // ==========================================
-  // 診断ロジック（4段階対角スコアリング）
-  // ==========================================
   function submitQuiz() {
     let allAnswered = true;
     let scores = { S:0, U:0, A:0, C:0, L:0, F:0, P:0, M:0 };
     let userAnswers = {};
-
     appData.quiz.forEach(q => {
-      const qKey = `q${q.no}`;
-      const entryId = ENTRY_IDS[qKey] || q.entry_id;
+      const entryId = ENTRY_IDS[`q${q.no}`] || q.entry_id;
       const selected = document.querySelector(`input[name="${entryId}"]:checked`);
       const card = document.getElementById(`card-${entryId}`);
-      
-      if (!selected) {
-        if(card) card.classList.add('error');
-        allAnswered = false;
-      } else {
-        if(card) card.classList.remove('error');
-        const val = parseInt(selected.value);
-        
-        if (val === 1) scores[q.opposite] += 2;
-        else if (val === 2) scores[q.opposite] += 1;
-        else if (val === 3) scores[q.type] += 1;
-        else if (val === 4) scores[q.type] += 2;
-        
-        userAnswers[entryId] = val; 
-      }
+      if (!selected) { if(card) card.classList.add('error'); allAnswered = false; }
+      else { if(card) card.classList.remove('error'); const val = parseInt(selected.value); if (val === 1) scores[q.opposite] += 2; else if (val === 2) scores[q.opposite] += 1; else if (val === 3) scores[q.type] += 1; else if (val === 4) scores[q.type] += 2; userAnswers[entryId] = val; }
     });
-
-    if (!allAnswered) {
-      alert("未回答の質問があります。赤枠の箇所をご確認ください。");
-      const errEl = document.querySelector('.question-card.error');
-      if (errEl) errEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      return;
-    }
-
-    let rawType = "";
-    rawType += (scores.S >= scores.U) ? "S" : "U";
-    rawType += (scores.A >= scores.C) ? "A" : "C";
-    rawType += (scores.L >= scores.F) ? "L" : "F";
-    rawType += (scores.P >= scores.M) ? "P" : "M";
-
+    if (!allAnswered) { const errEl = document.querySelector('.question-card.error'); if (errEl) errEl.scrollIntoView({ behavior: 'smooth', block: 'center' }); return alert("未回答の質問があります。赤枠の箇所をご確認ください。"); }
+    let rawType = (scores.S >= scores.U ? "S" : "U") + (scores.A >= scores.C ? "A" : "C") + (scores.L >= scores.F ? "L" : "F") + (scores.P >= scores.M ? "P" : "M");
     let resultData = null;
     let finalTypeCode = rawType; 
-    
     if (appData.results) {
       const targetChars = rawType.toUpperCase().split('').sort().join('');
-      for (const key in appData.results) {
-        if (key.toUpperCase().split('').sort().join('') === targetChars) {
-          resultData = appData.results[key];
-          finalTypeCode = key; 
-          break;
-        }
-      }
+      for (const key in appData.results) { if (key.toUpperCase().split('').sort().join('') === targetChars) { resultData = appData.results[key]; finalTypeCode = key; break; } }
     }
-
     sendToGoogleForm(userAnswers, finalTypeCode, resultData);
   }
 
-  // ==========================================
-  // Google Form への送信処理 (fetch API)
-  // ==========================================
   function sendToGoogleForm(step2Answers, typeCode, resultData) {
     const btn = document.getElementById('btn-submit-result');
-    if (btn) { btn.disabled = true; btn.textContent = "送信中..."; }
-
+    if (btn) { btn.disabled = true; btn.textContent = "結果を生成中..."; }
+    const loadingScreen = document.getElementById('loading-screen');
+    const loadingText = document.getElementById('loading-text');
+    if (loadingScreen && loadingText) { loadingText.textContent = "診断結果を分析中..."; loadingScreen.style.display = 'flex'; loadingScreen.style.background = 'rgba(255, 255, 255, 0.9)'; }
     const formData = new FormData();
-
-    // ① 1ページ目の回答データ（動的にappend）
-    let currentConfigs = appData.configs[CURRENT_MODE] || appData.configs['normal'];
-    if (!currentConfigs && Array.isArray(appData.configs)) currentConfigs = appData.configs;
-    if (currentConfigs) {
-      currentConfigs.forEach(q => {
-        if (!q || !q.entry_id) return;
-        const el = document.getElementById(q.entry_id);
-        const wrapper = document.getElementById(`wrapper-${q.entry_id}`);
-        // 表示されていて、かつ入力がある場合のみ送信
-        if (el && wrapper && wrapper.style.display !== 'none' && el.value) {
-          formData.append(q.entry_id, el.value);
-        }
-      });
-    }
-
-    // ② 診断の回答 (Q1〜Q12) の固定IDへのマッピング
-    Object.keys(step2Answers).forEach(entryId => { 
-      formData.append(entryId, step2Answers[entryId]); 
+    let currentConfigs = appData.configs[CURRENT_MODE] || appData.configs['normal'] || [];
+    currentConfigs.forEach(q => {
+      if (!q || !q.entry_id) return;
+      const el = document.getElementById(q.entry_id);
+      const wrapper = document.getElementById(`wrapper-${q.entry_id}`);
+      if (el && wrapper && wrapper.style.display !== 'none' && el.value) { formData.append(q.entry_id, el.value); }
     });
-    
-    // ③ 診断結果 (4文字のタイプ名) を指定の固定IDへマッピング
-    formData.append('entry.1431082762', typeCode);
-
-    // fetchによる送信処理 (CORSエラー回避のため mode: 'no-cors' を指定)
-    fetch(FORM_POST_URL, {
-      method: 'POST',
-      mode: 'no-cors',
-      body: formData
-    })
-    .then(response => {
-      // no-cors の場合は opaque レスポンスとなり詳細ステータスは読み取れないが、
-      // ネットワークレベルのエラーに落ちなければ成功とみなす
-      console.log('送信処理完了');
-    })
-    .catch(error => {
-      console.error('送信エラー:', error);
-      alert('データの一部送信に失敗した可能性がありますが、結果は表示されます。');
-    })
-    .finally(() => {
-      // 送信の成否に関わらず、ユーザーには結果画面を表示する
-      if (btn) { btn.disabled = false; btn.textContent = "診断結果を見る"; }
-      showResult(resultData, typeCode);
-    });
+    Object.keys(step2Answers).forEach(entryId => formData.append(entryId, step2Answers[entryId]));
+    formData.append(ENTRY_IDS.result, typeCode);
+    fetch(FORM_POST_URL, { method: 'POST', mode: 'no-cors', body: formData })
+    .then(() => console.log('送信完了'))
+    .catch(error => console.error('送信エラー:', error))
+    .finally(() => showResult(resultData, typeCode));
   }
 
-  // ==========================================
-  // 診断結果の表示処理
-  // ==========================================
-  function showResult(result, typeCode) {
+  // ★白飛び対策その2: 画像の「onload」を完璧に待つPromiseを作成・保存★
+  async function showResult(result, typeCode) {
     document.getElementById("step2-area").style.display = "none";
-    
-    if (!result) {
-      result = {
-        type_name: "判定エラー (" + typeCode + ")", color_code: "#2563a8",
-        description: "データが見つかりません。シートの「判定コード」列を確認してください。",
-        job: "設定エラー", trivia: "設定エラー"
-      };
-    }
-
-    const ra = document.getElementById("result-area");
-    ra.style.display = "block";
-    document.getElementById("action-area").style.display = "block";
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-
+    if (!result) { result = { type_name: "判定エラー (" + typeCode + ")", color_code: "#2563a8", description: "データなし", job: "エラー", trivia: "エラー" }; }
     document.getElementById("result-hero").style.background = result.color_code || "#2563a8";
     document.getElementById("job-box-colored").style.borderLeftColor = result.color_code || "#2563a8";
-
     document.getElementById("result-code").textContent = typeCode + " タイプ";
-    document.getElementById("result-name").textContent = result.type_name || "";
-    document.getElementById("result-description").textContent = result.description || "";
     document.getElementById("result-job-text").innerHTML = (result.job || "").replace(/\n/g, '<br>');
     document.getElementById("result-trivia-text").innerHTML = (result.trivia || "").replace(/\n/g, '<br>');
 
-    const snsData = appData.sns[CURRENT_MODE] || appData.sns['normal'];
-    if (snsData && snsData.insta_hashtags) {
-      document.getElementById('share-hashtags-area').style.display = 'block';
-      document.getElementById('insta-hashtags-text').textContent = snsData.insta_hashtags;
+    // GASからのBase64画像データの取得
+    let base64Image = result.avatar_base64 || result.avatar_url;
+    
+    // 【重要】onload待ち Promise をグローバル変数に保存
+    window.avatarLoadPromise = null;
+
+    if (base64Image && base64Image.trim() !== "") {
+      const avatarImg = document.getElementById("avatar-img");
+      
+      // 画像が読み込まれるのを待つPromiseを作成
+      window.avatarLoadPromise = new Promise((resolve) => {
+        avatarImg.onload = resolve;
+        avatarImg.onerror = resolve; // エラーが起きても次へ進めるようにする
+      });
+
+      avatarImg.src = base64Image;
+      document.getElementById("profile-name").textContent = result.type_name || "";
+      document.getElementById("profile-desc").innerHTML = (result.description || "").replace(/\n/g, '<br>');
+      document.getElementById("default-title-layout").style.display = "none";
+      document.getElementById("result-description").style.display = "none";
+      document.getElementById("profile-card-layout").style.display = "flex";
+    } else {
+      document.getElementById("result-name").textContent = result.type_name || "";
+      document.getElementById("result-description").innerHTML = (result.description || "").replace(/\n/g, '<br>');
+      document.getElementById("default-title-layout").style.display = "block";
+      document.getElementById("result-description").style.display = "block";
+      document.getElementById("profile-card-layout").style.display = "none";
     }
 
+    const snsData = appData.sns[CURRENT_MODE] || appData.sns['normal'];
+    if (snsData && snsData.insta_hashtags) { document.getElementById('share-hashtags-area').style.display = 'block'; document.getElementById('insta-hashtags-text').textContent = snsData.insta_hashtags; }
+    const loadingScreen = document.getElementById('loading-screen');
+    if (loadingScreen) loadingScreen.style.display = 'none';
+    document.getElementById("result-area").style.display = "block";
+    document.getElementById("action-area").style.display = "block";
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     window.currentResult = result;
   }
 
-  // ==========================================
-  // SNSシェア・保存機能
-  // ==========================================
   function shareToX() {
     const result = window.currentResult;
     const snsData = appData.sns[CURRENT_MODE] || appData.sns['normal'];
     if (!result || !snsData) return;
-    
     const text = `${snsData.x_text}「${result.type_name}」でした！\n\n`;
     const shareUrl = window.location.origin + window.location.pathname; 
     const hashtags = snsData.x_hashtags;
-    
     const tweetContent = encodeURIComponent(`${text}\n${shareUrl}`);
     const hashtagQuery = hashtags ? `&hashtags=${encodeURIComponent(hashtags)}` : "";
     window.open(`https://twitter.com/intent/tweet?text=${tweetContent}${hashtagQuery}`, '_blank');
   }
 
-  function shareToInstagram() {
+  // ★白飛び対策その3: onloadPromiseを待ってから、setTimeoutで撮影する (async/await化) ★
+  async function shareToInstagram() {
     const resultArea = document.getElementById('result-area');
     const originalPadding = resultArea.style.paddingBottom;
     resultArea.style.paddingBottom = "30px"; 
+    const shareBtn = document.getElementById('btn-ig-share');
+    const originalBtnText = shareBtn.innerHTML;
+    shareBtn.innerHTML = "⏳ 画像を生成中...";
+    shareBtn.disabled = true;
 
-    html2canvas(resultArea, { 
-      scale: 2, 
-      useCORS: true, 
-      backgroundColor: "#ffffff" 
-    }).then(canvas => {
-      resultArea.style.paddingBottom = originalPadding;
-      
-      const link = document.createElement('a');
-      link.download = 'cbti_result.png';
-      link.href = canvas.toDataURL('image/png');
-      link.click();
+    // 【最重要】GASから来たBase64画像の描画完了を完璧に待つ
+    if (window.avatarLoadPromise) {
+      console.log("アバター画像の描画完了を待機します...");
+      await window.avatarLoadPromise;
+      console.log("アバター画像の描画が完了しました。");
+    }
 
-      setTimeout(() => { window.location.href = "instagram://camera"; }, 500);
-    }).catch(err => {
-      console.error("画像生成エラー:", err);
-      alert("画像の生成に失敗しました。");
-      resultArea.style.paddingBottom = originalPadding;
-    });
+    // ★白飛び対策その4: 描画完了後、さらに0.5秒の予備待機時間を設ける (iOS対策)★
+    setTimeout(() => {
+      // ★白飛び対策その5: バージョン1.3.3のオプション、backgroundColorは白を指定 ★
+      html2canvas(resultArea, { 
+        scale: 2, 
+        useCORS: true, 
+        allowTaint: true,         // Base64画像の描画に必要
+        backgroundColor: "#ffffff", // 白飛び（透過）を防ぐために白を指定
+        logging: true 
+      }).then(canvas => {
+        resultArea.style.paddingBottom = originalPadding;
+        shareBtn.innerHTML = originalBtnText;
+        shareBtn.disabled = false;
+        canvas.toBlob(blob => {
+          if (!blob) return alert("画像の生成に失敗しました。");
+          const fileName = 'cbti_result.png';
+          const file = new File([blob], fileName, { type: 'image/png' });
+          if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            navigator.share({ files: [file], title: '土木16タイプ診断結果', text: '私の診断結果です！' }).catch((error) => console.log('Sharing failed', error));
+          } else {
+            const link = document.createElement('a'); link.download = fileName; link.href = URL.createObjectURL(blob); link.click();
+            if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) { setTimeout(() => { window.location.href = "instagram://camera"; }, 500); }
+          }
+        }, 'image/png');
+      }).catch(err => {
+        console.error("画像生成エラー:", err);
+        alert("画像の生成中にエラーが発生しました。");
+        resultArea.style.paddingBottom = originalPadding;
+        shareBtn.innerHTML = originalBtnText;
+        shareBtn.disabled = false;
+      });
+    }, 500); // onload後の予備待機
   }
 </script>
 </body>
