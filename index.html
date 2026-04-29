@@ -1,566 +1,703 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>土木16タイプ診断 (CBTI) - SIT Civil Circle</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>土木16タイプ診断 (CBTI) - SIT Civil Circle</title>
 
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-XXXXXXXXXX');
-</script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-XXXXXXXXXX');
+    </script>
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Josefin+Sans:wght@300;600;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Josefin+Sans:wght@300;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@700&display=swap" rel="stylesheet">
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.3.3/html2canvas.min.js"></script>
+    <style>
+        /* ==========================================
+           基本デザイン設定（最強クオリティ版）
+           ========================================== */
+        :root {
+            --blue-deep: #1a3a5c;
+            --blue-mid:  #2563a8; /* スプレッドシートの色で上書きされます */
+            --blue-light: #4a9fd4;
+            --blue-pale: #dbeeff;
+            --white: #ffffff;
+            --gray-line: #d8e8f5;
+            --text-main: #222222; 
+            --text-sub: #444444;  
+            --error-red: #d32f2f;
+        }
 
-<style>
-  :root, #result-area {
-    --blue-deep: #1a3a5c;
-    --blue-mid:  #2563a8;
-    --blue-light: #4a9fd4;
-    --blue-pale: #dbeeff;
-    --white: #ffffff;
-    --gray-line: #d8e8f5;
-    --text-main: #222222; 
-    --text-sub: #444444;  
-    --error-red: #d32f2f;
-  }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background: linear-gradient(160deg, #e8f3ff 0%, #f6faff 50%, #eef6ff 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            padding: 20px 10px 40px;
+        }
 
-  body {
-    font-family: 'Noto Sans JP', sans-serif;
-    background: linear-gradient(160deg, #e8f3ff 0%, #f6faff 50%, #eef6ff 100%);
-    min-height: 100vh;
-    display: flex;
-    align-items: flex-start;
-    justify-content: center;
-    padding: 20px 10px 20px;
-  }
+        body::before {
+            content: ''; position: fixed; inset: 0;
+            background-image: linear-gradient(#e2eef9 1px, transparent 1px), linear-gradient(90deg, #e2eef9 1px, transparent 1px);
+            background-size: 40px 40px; pointer-events: none; z-index: 0;
+        }
 
-  body::before {
-    content: ''; position: fixed; inset: 0;
-    background-image: linear-gradient(#e2eef9 1px, transparent 1px), linear-gradient(90deg, #e2eef9 1px, transparent 1px);
-    background-size: 40px 40px; pointer-events: none; z-index: 0;
-  }
+        #app-container { position: relative; z-index: 1; width: 100%; max-width: 600px; }
 
-  #app-container { position: relative; z-index: 1; width: 100%; max-width: 600px; }
+        /* ==========================================
+           ローディング画面
+           ========================================== */
+        #loading-screen {
+            position: fixed; inset: 0; background: rgba(255, 255, 255, 0.98); display: flex; flex-direction: column;
+            justify-content: center; align-items: center; z-index: 9999; color: var(--blue-mid); font-weight: 700;
+        }
+        .spinner {
+            width: 40px; height: 40px; border: 4px solid var(--blue-pale); border-top-color: var(--blue-mid);
+            border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
-  #loading-screen {
-    position: fixed; inset: 0; background: rgba(255, 255, 255, 0.95); display: flex; flex-direction: column;
-    justify-content: center; align-items: center; z-index: 9999; color: var(--blue-mid); font-weight: 700;
-  }
-  .spinner {
-    width: 40px; height: 40px; border: 4px solid var(--blue-pale); border-top-color: var(--blue-mid);
-    border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
+        /* ==========================================
+           ヘッダー・共通カード
+           ========================================== */
+        .app-header { text-align: center; margin-bottom: 24px; animation: fadeSlideDown 0.5s ease both; }
+        .app-header .label-eng { display: inline-block; font-family: 'Josefin Sans', sans-serif; font-size: 0.75em; font-weight: 600; letter-spacing: 0.25em; color: var(--blue-light); text-transform: uppercase; margin-bottom: 6px; }
+        .app-header h1 { font-family: 'Josefin Sans', sans-serif; font-size: clamp(1.6em, 5vw, 2.2em); font-weight: 700; color: var(--blue-deep); }
+        .app-header h1 span { color: var(--blue-mid); }
+        .app-header .subtitle { margin-top: 6px; font-size: 0.85em; color: var(--text-sub); letter-spacing: 0.05em; }
 
-  .app-header { text-align: center; margin-bottom: 24px; animation: fadeSlideDown 0.5s ease both; }
-  .app-header .label-eng { display: inline-block; font-family: 'Josefin Sans', sans-serif; font-size: 0.7em; font-weight: 600; letter-spacing: 0.2em; color: var(--blue-light); text-transform: uppercase; margin-bottom: 4px; }
-  .app-header h1 { font-family: 'Josefin Sans', sans-serif; font-size: clamp(1.4em, 4.5vw, 2em); font-weight: 700; color: var(--blue-deep); }
-  .app-header h1 span { color: var(--blue-mid); }
-  .app-header .subtitle { margin-top: 4px; font-size: 0.8em; color: var(--text-sub); }
+        .content-card { background: var(--white); border-radius: 18px; box-shadow: 0 10px 30px rgba(26,58,92,0.08); padding: 28px 24px; margin-bottom: 24px; transition: transform 0.3s ease; }
 
-  .content-card { background: var(--white); border-radius: 16px; box-shadow: 0 4px 20px rgba(26,58,92,0.06); padding: 24px 20px; margin-bottom: 20px; }
+        /* ==========================================
+           Step 1: アンケートエリア
+           ========================================== */
+        #step1-area { animation: fadeSlideUp 0.5s ease both; }
+        .form-group { margin-bottom: 24px; }
+        .form-label { display: block; font-size: 0.95em; font-weight: 700; color: var(--blue-deep); margin-bottom: 10px; }
+        .form-control { width: 100%; padding: 14px 16px; font-size: 1em; font-family: inherit; color: var(--text-main); border: 2px solid var(--gray-line); border-radius: 10px; background-color: #fafcfd; transition: all 0.3s ease; }
+        .form-control:focus { outline: none; border-color: var(--blue-mid); background-color: var(--white); box-shadow: 0 0 0 4px var(--blue-pale); }
+        textarea.form-control { resize: vertical; min-height: 120px; line-height: 1.6; }
+        
+        .dependent-field { margin-top: -10px; padding-top: 15px; border-top: 1px dashed var(--gray-line); }
+        .slide-down-fade { animation: slideDownFade 0.45s cubic-bezier(0.16, 1, 0.3, 1) both; }
 
-  #step1-area { animation: fadeSlideUp 0.5s ease both; }
-  .form-group { margin-bottom: 20px; }
-  .form-label { display: block; font-size: 0.95em; font-weight: 700; color: var(--blue-deep); margin-bottom: 8px; }
-  .form-control { width: 100%; padding: 12px 15px; font-size: 1em; font-family: inherit; color: var(--text-main); border: 2px solid var(--gray-line); border-radius: 8px; background-color: #fafcfd; transition: border-color 0.3s; }
-  .form-control:focus { outline: none; border-color: var(--blue-mid); background-color: var(--white); }
-  textarea.form-control { resize: vertical; min-height: 100px; }
-  
-  .dependent-field { margin-top: -10px; padding-top: 10px; border-top: 1px dashed var(--gray-line); }
-  .slide-down-fade { animation: slideDownFade 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
+        /* ==========================================
+           Step 2: 診断問題エリア (4段階UI完全復元)
+           ========================================== */
+        #step2-area { display: none; animation: fadeSlideUp 0.5s ease both; }
+        .question-card { border: 2px solid transparent; transition: all 0.3s ease; padding-bottom: 30px; }
+        .question-card.error { border-color: var(--error-red); background-color: #fffaf9; }
+        .question-text { font-size: 1.05em; font-weight: 700; color: var(--text-main); line-height: 1.7; margin-bottom: 24px; }
+        
+        /* ラベル（全くそう思わない 等）の配置 */
+        .scale-labels { display: flex; justify-content: space-between; font-size: clamp(0.7em, 3vw, 0.85em); font-weight: 700; color: var(--text-sub); margin-bottom: 12px; padding: 0 15px; }
+        .scale-labels span { width: 25%; text-align: center; line-height: 1.4; letter-spacing: -0.05em; }
+        .scale-row { position: relative; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; height: 60px; }
+        .scale-line { position: absolute; top: 50%; left: 30px; right: 30px; height: 4px; background: var(--gray-line); z-index: 0; transform: translateY(-50%); border-radius: 2px; }
+        
+        .scale-option { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; cursor: pointer; width: 25%; }
+        .scale-option input[type="radio"] { position: absolute; opacity: 0; cursor: pointer; }
+        .scale-bubble { border-radius: 50%; background: var(--white); border: 3px solid var(--blue-pale); transition: all 0.25s cubic-bezier(.4,0,.2,1); box-shadow: 0 3px 6px rgba(0,0,0,0.05); }
+        
+        /* 丸の大きさ：大・中・中・大 */
+        .scale-bubble.size-L { width: 52px; height: 52px; }
+        .scale-bubble.size-M { width: 38px; height: 38px; }
+        @media (max-width: 400px) {
+            .scale-bubble.size-L { width: 46px; height: 46px; }
+            .scale-bubble.size-M { width: 32px; height: 32px; }
+        }
+        .scale-option input[type="radio"]:checked + .scale-bubble { background: var(--blue-mid); border-color: var(--blue-mid); transform: scale(1.15); box-shadow: 0 5px 15px rgba(0,0,0,0.15); }
 
-  #step2-area { display: none; animation: fadeSlideUp 0.5s ease both; }
-  .question-card { border: 2px solid transparent; transition: border-color 0.3s; padding-bottom: 25px; }
-  .question-card.error { border-color: var(--error-red); background-color: #fffaf9; }
-  .question-text { font-size: 0.95em; font-weight: 700; color: var(--text-main); line-height: 1.6; margin-bottom: 20px; }
-  
-  .scale-labels { display: flex; justify-content: space-between; font-size: 0.75em; font-weight: 700; color: var(--text-sub); margin-bottom: 15px; padding: 0 10px; }
-  .scale-row { position: relative; display: flex; justify-content: space-between; align-items: center; padding: 0 10px; height: 55px; }
-  .scale-line { position: absolute; top: 50%; left: 20px; right: 20px; height: 4px; background: var(--gray-line); z-index: 0; transform: translateY(-50%); border-radius: 2px; }
-  
-  .scale-option { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; cursor: pointer; width: 25%; }
-  .scale-option input[type="radio"] { position: absolute; opacity: 0; cursor: pointer; }
-  .scale-bubble { border-radius: 50%; background: var(--white); border: 3px solid var(--blue-pale); transition: all 0.2s cubic-bezier(.4,0,.2,1); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-  
-  .scale-bubble.size-L { width: 50px; height: 50px; }
-  .scale-bubble.size-M { width: 36px; height: 36px; }
-  @media (max-width: 400px) {
-    .scale-bubble.size-L { width: 44px; height: 44px; }
-    .scale-bubble.size-M { width: 30px; height: 30px; }
-  }
-  .scale-option input[type="radio"]:checked + .scale-bubble { background: var(--blue-mid); border-color: var(--blue-mid); transform: scale(1.15); box-shadow: 0 4px 12px rgba(37,99,168,0.3); }
+      /* 診断の選択肢ラベルを丸の中心に絶対固定する最強の書き方（追従型） */
+        .quiz-labels {
+            display: flex;
+            justify-content: space-between;
+            padding: 0 15px; /* 丸の列（scale-row）の余白と完全に一致させる */
+            margin-bottom: 8px;
+        }
+        .label-left, .label-right {
+            width: 25%; /* 丸のエリア（scale-option）と幅を完全に一致させる */
+            text-align: center; /* その枠の中で真ん中揃え */
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: #555;
+            white-space: nowrap; /* 一行にする */
+        }
 
-  .btn-submit { display: block; width: 100%; padding: 18px; background: var(--blue-deep); color: var(--white); font-family: 'Noto Sans JP', sans-serif; font-size: 1.1em; font-weight: 700; letter-spacing: 0.1em; border: none; border-radius: 12px; cursor: pointer; box-shadow: 0 6px 20px rgba(26,58,92,0.2); transition: background 0.2s, transform 0.1s; }
-  .btn-submit:hover { background: var(--blue-mid); transform: translateY(-2px); }
-  .btn-submit:active { transform: translateY(0); }
-  .btn-submit:disabled { background: #88a5c2; cursor: not-allowed; transform: none; box-shadow: none; }
-  .submit-btn-wrapper { margin-top: 40px; margin-bottom: 20px; }
+        /* ==========================================
+           ボタンデザイン
+           ========================================== */
+        .btn-submit { display: block; width: 100%; padding: 20px; background: var(--blue-mid); color: var(--white); font-family: 'Noto Sans JP', sans-serif; font-size: 1.15em; font-weight: 700; letter-spacing: 0.12em; border: none; border-radius: 14px; cursor: pointer; box-shadow: 0 6px 20px rgba(0,0,0,0.12); transition: all 0.3s ease; }
+        .btn-submit:hover { opacity: 0.9; transform: translateY(-3px); box-shadow: 0 10px 25px rgba(0,0,0,0.18); }
+        .btn-submit:active { transform: translateY(-1px); }
+        .btn-submit:disabled { background: #b0c4d8; cursor: not-allowed; transform: none; box-shadow: none; }
+        .submit-btn-wrapper { margin-top: 40px; margin-bottom: 24px; }
 
-  #result-area { display: none; border-radius: 20px; overflow: hidden; box-shadow: 0 16px 48px rgba(26,58,92,0.18); animation: fadeSlideUp 0.5s ease both; background: #ffffff; position: relative; margin-bottom: 20px; }
-  .result-hero { padding: 40px 20px 30px; text-align: center; color: #ffffff; }
-  .result-code-badge { display: inline-block; font-family: 'Josefin Sans', sans-serif; font-size: 0.85em; font-weight: 900; letter-spacing: 0.2em; background: #ffffff; color: #333333; padding: 6px 20px; border-radius: 99px; margin-bottom: 15px; border: 2px solid #eeeeee; }
-  
-  #default-title-layout .result-type-name { font-size: clamp(1.4em, 5vw, 2em); font-weight: 900; line-height: 1.3; color: inherit; }
-  
-  .result-body { padding: 30px 20px 20px; }
-  #result-description { font-size: 1.05em; line-height: 1.7; color: var(--text-main); margin-bottom: 25px; padding-bottom: 25px; border-bottom: 2px solid #e0e8f0; font-weight: 700; }
+        /* ==========================================
+           診断結果エリア
+           ========================================== */
+        #result-area { display: none; border-radius: 22px; overflow: hidden; box-shadow: 0 20px 60px rgba(26,58,92,0.2); animation: fadeSlideUp 0.6s ease both; background: #ffffff; position: relative; margin-bottom: 24px; }
+        .result-hero { padding: 45px 20px 35px; text-align: center; color: #ffffff; background: var(--blue-mid); transition: background 0.5s ease; }
+        .result-code-badge { display: inline-block; font-family: 'Josefin Sans', sans-serif; font-size: 0.9em; font-weight: 900; letter-spacing: 0.2em; background: #ffffff; color: #333333; padding: 7px 22px; border-radius: 99px; margin-bottom: 18px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        
+        /* タイプ名の表示（画面用） */
+        .result-type-name-hero { font-size: clamp(1.7em, 6.5vw, 2.4em); font-weight: 900; line-height: 1.3; margin: 0; color: #ffffff; text-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+        
+        .result-body { padding: 35px 25px; }
+        #result-description { font-size: 1.1em; line-height: 1.8; color: var(--text-main); margin-bottom: 30px; font-weight: 700; border-bottom: 2px solid #f0f4f8; padding-bottom: 30px; }
 
-  .profile-card { background: #ffffff; border: 2px solid #d8e8f5; border-radius: 16px; padding: 20px; display: flex; gap: 20px; align-items: center; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(26,58,92,0.04); }
-  .avatar-frame { width: 110px; height: 110px; border-radius: 16px; object-fit: cover; border: 4px solid var(--blue-pale); flex-shrink: 0; background-color: #f4f9ff; }
-  .profile-text { display: flex; flex-direction: column; text-align: left; gap: 8px; }
-  .profile-text .type-name { font-size: 1.35em; font-weight: 900; color: var(--blue-deep); line-height: 1.2; }
-  .profile-text .catchphrase { font-size: 0.95em; color: var(--text-main); line-height: 1.6; font-weight: 700; }
+        /* プロフィールカード (B案) */
+        .profile-card { background: #ffffff; border: 2px solid #d8e8f5; border-radius: 18px; padding: 22px; display: flex; gap: 24px; align-items: center; margin-bottom: 30px; box-shadow: 0 6px 18px rgba(26,58,92,0.05); }
+        .avatar-frame { width: 115px; height: 115px; border-radius: 14px; object-fit: cover; border: 4px solid var(--blue-pale); flex-shrink: 0; background-color: #f8fbff; }
+        .profile-text { display: flex; flex-direction: column; text-align: left; gap: 10px; }
+        .profile-text .type-name { font-size: 1.4em; font-weight: 900; color: var(--blue-mid); line-height: 1.2; }
+        .profile-text .catchphrase { font-size: 1em; color: var(--text-main); line-height: 1.6; font-weight: 700; }
 
-  .job-box { background: #f4f9ff; border: 2px solid #d8e8f5; border-radius: 12px; padding: 20px; border-left: 8px solid #2563a8; display: flex; flex-direction: column; gap: 15px; }
-  .job-box-section { display: flex; flex-direction: column; }
-  .job-box-divider { height: 2px; background-color: #d8e8f5; margin: 5px 0; }
-  .job-label { font-size: 0.9em; font-weight: 900; color: #1a3a5c; margin-bottom: 8px; display: block; }
-  .job-text { font-size: 1.05em; color: var(--text-main); line-height: 1.6; font-weight: 700; }
+        .job-box { background: #f5faff; border: 2px solid #d8e8f5; border-radius: 16px; padding: 24px; border-left: 10px solid var(--blue-mid); display: flex; flex-direction: column; gap: 18px; }
+        .job-label { font-size: 0.95em; font-weight: 900; color: var(--blue-deep); display: block; }
+        .job-text { font-size: 1.1em; color: var(--text-main); line-height: 1.7; font-weight: 700; }
 
-  .share-hashtags-area { text-align: center; margin-top: 25px; padding-top: 15px; border-top: 2px dashed #e0e8f0; }
-  .share-hashtags-text { font-size: 1.1em; font-weight: 900; color: #2563a8; letter-spacing: 0.05em; }
+        .share-hashtags-area { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 2px dashed #e0e8f0; }
+        .share-hashtags-text { font-size: 1.15em; font-weight: 900; color: var(--blue-mid); letter-spacing: 0.05em; }
+        
+       /* もっと土木を知りたいならここ！の枠（実線） */
+        .official-link-box {
+            border: 2px solid #1a531f; /* 点線(dashed)ではなく実線(solid) */
+            border-radius: 12px;
+            padding: 25px 15px 15px;
+            margin-top: 30px;
+            background-color: #f9f9f9;
+            position: relative;
+        }
+        .link-box-title {
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #1a531f;
+            color: white;
+            padding: 4px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            white-space: nowrap;
+        }
 
-  .action-buttons { margin-top: 30px; }
-  .btn-share-x { background: #000000; margin-bottom: 15px; }
-  .btn-share-x:hover { background: #333333; }
-  .btn-share-ig { background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); margin-bottom: 15px; }
-  
-  .official-links { display: flex; justify-content: space-between; gap: 10px; margin-top: 20px; }
-  .btn-link { flex: 1; text-align: center; padding: 14px 5px; border-radius: 8px; font-size: 0.85em; font-weight: 700; text-decoration: none; color: #ffffff; box-shadow: 0 4px 10px rgba(0,0,0,0.1); transition: transform 0.2s; }
-  .btn-link:hover { transform: translateY(-2px); }
-  .bg-ig { background: #E1306C; } .bg-x { background: #14171A; } .bg-hp { background: #2563a8; }
+        /* 公式ボタンの以前のカラーを強制復活させる */
+        .bg-ig { background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888) !important; color: white !important; border: none !important; }
+        .bg-x { background-color: #000000 !important; color: white !important; border: none !important; }
+        .bg-hp { background-color: #1a531f !important; color: white !important; border: none !important; }
 
-  .app-footer { text-align: left; margin-top: 30px; padding: 20px; color: var(--text-sub); border-top: 1px solid #d8e8f5; background: #ffffff; border-radius: 12px; font-size: 0.75em; line-height: 1.6; }
-  .app-footer h4 { font-size: 1.1em; color: var(--blue-deep); margin-bottom: 6px; }
-  .app-footer p { margin-bottom: 15px; font-weight: 500; }
-  .app-footer .copyright { text-align: center; font-family: 'Josefin Sans', sans-serif; font-size: 1.1em; margin-top: 20px; margin-bottom: 0; }
+        /* ==========================================
+           アクション・リンク領域 (完全復元)
+           ========================================== */
+        .action-buttons { margin-top: 35px; }
+        /* Xのシェアボタン全体のデザイン */
+        .btn-share-x {
+             background-color: #000000 !important; /* 黒に変更 */
+            color: white !important;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 16px; /* 元の余白を維持 */
+        }
 
-  @keyframes fadeSlideDown { from { opacity: 0; transform: translateY(-15px); } to { opacity: 1; transform: translateY(0); } }
-  @keyframes fadeSlideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-  @keyframes slideDownFade { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-</style>
+            /* Xのアイコンだけをさらに狙い撃ちしてかっこよくする */
+        .btn-share-x i {
+             font-size: 1.3em !important;
+            -webkit-text-stroke: 0.5px white; 
+        }
+        .btn-share-ig { background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%) !important; margin-bottom: 16px; }
+        
+        .official-links { display: flex; justify-content: space-between; gap: 12px; margin-top: 24px; }
+        .btn-link { flex: 1; text-align: center; padding: 16px 5px; border-radius: 10px; font-size: 0.9em; font-weight: 700; text-decoration: none; color: #ffffff; background: var(--blue-mid); box-shadow: 0 4px 12px rgba(0,0,0,0.1); transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; }
+        .btn-link:hover { transform: translateY(-3px); box-shadow: 0 6px 15px rgba(0,0,0,0.15); }
+        
+        .bg-ig { background: #E1306C !important; } 
+        .bg-x { background: #14171A !important; } 
+        .bg-hp { background: var(--blue-mid) !important; }
+
+        /* ==========================================
+           フッター (プライバシーポリシー復元)
+           ========================================== */
+        .app-footer { text-align: left; margin-top: 40px; padding: 25px; color: var(--text-sub); border-top: 1px solid #d8e8f5; background: #ffffff; border-radius: 15px; font-size: 0.8em; line-height: 1.7; box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
+        .app-footer h4 { font-size: 1.1em; color: var(--blue-deep); margin-bottom: 10px; font-weight: 700; }
+        .app-footer p { margin-bottom: 18px; font-weight: 500; }
+        .app-footer .copyright { text-align: center; font-family: 'Josefin Sans', sans-serif; font-size: 1.15em; margin-top: 25px; color: var(--text-sub); border-top: 1px solid #f0f4f8; padding-top: 20px; }
+
+        /* ==========================================
+           アニメーション
+           ========================================== */
+        @keyframes fadeSlideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeSlideUp { from { opacity: 0; transform: translateY(25px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideDownFade { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: translateY(0); } }
+        /* 診断結果エリア内のすべての文字を丸ゴシックにする */
+        #result-screen, 
+        #result-screen *, 
+        .result-title, 
+        .type-name {
+            font-family: 'Zen Maru Gothic', sans-serif !important;
+        }
+        
+    </style>
 </head>
 <body>
 
 <div id="loading-screen">
-  <div class="spinner"></div>
-  <p id="loading-text">データを読み込んでいます...</p>
+    <div class="spinner"></div>
+    <p id="loading-text">🚧システム施工中🚧</p>
 </div>
 
 <div id="app-container">
-  <header class="app-header">
-    <div class="label-eng">SIT CIVIL CIRCLE</div>
-    <h1>土木16タイプ診断 <span>(CBTI)</span></h1>
-    <p class="subtitle">Civil Behavior Type Indicator</p>
-  </header>
+    <header class="app-header">
+        <div class="label-eng">SIT CIVIL CIRCLE</div>
+        <h1>土木16タイプ診断 <span>(CBTI)</span></h1>
+        <p class="subtitle">Civil Behavior Type Indicator</p>
+    </header>
 
-  <div id="step1-area">
-    <div class="content-card">
-      <div id="step1-dynamic-container"></div>
-      <button type="button" id="btn-start" class="btn-submit" onclick="goToStep2()">診断を始める</button>
-    </div>
-  </div>
-
-  <div id="step2-area">
-    <div id="questions-container" style="padding-bottom: 20px;"></div>
-    <div class="submit-btn-wrapper">
-      <button type="button" class="btn-submit" id="btn-submit-result" onclick="submitQuiz()">診断結果を見る</button>
-    </div>
-  </div>
-
-  <div id="result-area">
-    <div class="result-hero" id="result-hero">
-      <div class="result-code-badge" id="result-code"></div>
-      <div id="default-title-layout">
-        <div class="result-type-name" id="result-name"></div>
-      </div>
-    </div>
-    
-    <div class="result-body">
-      <p class="result-desc" id="result-description"></p>
-      
-      <div id="profile-card-layout" class="profile-card" style="display: none;">
-        <img id="avatar-img" class="avatar-frame" src="" alt="Avatar">
-        <div class="profile-text">
-          <div class="type-name" id="profile-name"></div>
-          <div class="catchphrase" id="profile-desc"></div>
+    <div id="step1-area">
+        <div class="content-card">
+            <div id="step1-dynamic-container"></div>
+            <button type="button" id="btn-start" class="btn-submit" onclick="goToStep2()">診断を始める</button>
         </div>
-      </div>
-
-      <div class="job-box" id="job-box-colored">
-        <div class="job-box-section">
-          <span class="job-label">■ おすすめの職種・就職先イメージ</span>
-          <div class="job-text" id="result-job-text"></div>
-        </div>
-        <div class="job-box-divider"></div>
-        <div class="job-box-section">
-          <span class="job-label">💡 土木豆知識</span>
-          <div class="job-text" id="result-trivia-text"></div>
-        </div>
-      </div>
-      <div class="share-hashtags-area" id="share-hashtags-area" style="display:none;">
-        <div class="share-hashtags-text" id="insta-hashtags-text"></div>
-      </div>
     </div>
-  </div>
 
-  <div id="action-area" style="display:none;">
-    <div class="action-buttons">
-      <button type="button" class="btn-submit btn-share-x" onclick="shareToX()">𝕏 X(Twitter)で結果をシェア</button>
-      <button type="button" class="btn-submit btn-share-ig" id="btn-ig-share" onclick="shareToInstagram()">📸 画像をシェア / 保存する</button>
-      <div class="official-links" id="official-links-container"></div>
-      <button type="button" class="btn-submit" style="margin-top: 25px; background: #5a7a96;" onclick="location.reload()">🔄 もう一度診断する</button>
+    <div id="step2-area">
+        <div id="questions-container"></div>
+        <div class="submit-btn-wrapper">
+            <button type="button" class="btn-submit" id="btn-submit-result" onclick="submitQuiz()">診断結果を見る</button>
+        </div>
     </div>
-  </div>
 
-  <footer class="app-footer">
-    <h4>プライバシーポリシー</h4>
-    <p>当サイトでは、利用状況の分析のためにGoogle Analyticsを利用しています。入力された属性や回答データは、本企画の分析および統計データとしてのみ利用し、個人を特定する情報は一切取得・保持いたしません。</p>
-    <h4>免責事項・商標について</h4>
-    <p>本診断（CBTI）は、土木・都市分野への興味関心の傾向を測る目的で作成された独自のエンターテインメントコンテンツです。MBTI&reg;とは一切関係がありません。</p>
-    <p class="copyright">&copy; 2026 SIT Civil Circle</p>
-  </footer>
+    <div id="result-area">
+        <div class="result-hero" id="result-hero-box">
+            <div class="result-code-badge" id="result-code"></div>
+            <h2 class="result-type-name-hero" id="result-type-name-display"></h2>
+        </div>
+        
+        <div class="result-body">
+            <p id="result-description"></p>
+            
+            <div id="profile-card-layout" class="profile-card" style="display: none;">
+                <img id="avatar-img" class="avatar-frame" src="" alt="Avatar">
+                <div class="profile-text">
+                    <div class="type-name" id="profile-name-text"></div>
+                    <div class="catchphrase" id="profile-desc-text"></div>
+                </div>
+            </div>
+
+            <div class="job-box" id="job-box-colored">
+                <div class="job-box-section">
+                    <span class="job-label">■ おすすめの職種・就職先イメージ</span>
+                    <div class="job-text" id="result-job-text"></div>
+                </div>
+                <hr style="border:0; border-top:2px solid #d8e8f5; margin:20px 0;">
+                <div class="job-box-section">
+                    <span class="job-label">💡 土木豆知識</span>
+                    <div class="job-text" id="result-trivia-text"></div>
+                </div>
+            </div>
+            <div class="share-hashtags-area" id="share-hashtags-area" style="display:none;">
+                <div class="share-hashtags-text" id="insta-hashtags-text"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="action-area" style="display:none;">
+        <div class="action-buttons">
+            <button type="button" class="btn-submit btn-share-x" onclick="shareToX()"><i class="fa-brands fa-x-twitter"></i> Xで結果をシェア</button>
+            <button type="button" class="btn-submit btn-share-ig" id="btn-ig-share" onclick="shareToInstagram()"><i class="fa-brands fa-instagram"></i> 画像をシェア / 保存する</button>
+           <div class="official-link-box">
+                <div class="link-box-title">もっと土木を知りたいならここ！</div>
+                <div id="official-links-container" style="display: flex; gap: 8px;"></div>
+            </div>
+            <button type="button" class="btn-submit" style="margin-top: 28px; background: #5a7a96 !important;" onclick="location.reload()">🔄 もう一度診断する</button>
+        </div>
+    </div>
+
+    <footer class="app-footer">
+        <h4>プライバシーポリシー</h4>
+        <p>当サイトでは、利用状況の分析のためにGoogle Analyticsを利用しています。入力された属性や回答データは、本企画の分析および統計データとしてのみ利用し、個人を特定する情報は一切取得・保持いたしません。</p>
+        <h4>免責事項・商標について</h4>
+        <p>本診断（CBTI）は、土木・都市分野への興味関心の傾向を測る目的で作成された独自のエンターテインメントコンテンツです。MBTI&reg;とは一切関係がありません。</p>
+        <p class="copyright">&copy; 2026 SIT Civil Circle</p>
+    </footer>
 </div>
 
+
 <script>
-  const CURRENT_MODE = (function() {
-    const params = new URLSearchParams(window.location.search);
-    const mode = params.get('mode');
-    const validModes = ['omiya', 'shibaura', 'normal', 'spare'];
-    return validModes.includes(mode) ? mode : 'normal';
-  })();
+  //この下にスプレッドシートからのデプロイURLをコピー
+  const API_URL = "https://script.google.com/macros/s/AKfycbyU6YqGJX4Va_0g_mkG2VPWXzPJwohsBNKAJ32Cfbc0_WY-llWJ981i5sPomgZQ_qVx/exec"; 
+</script>
+<script>
+    // 状態管理
+    const CURRENT_MODE = (new URLSearchParams(window.location.search).get('mode')) || 'normal';
+    const FORM_POST_URL = "https://docs.google.com/forms/d/e/1FAIpQLSdWAEc-QiDXLWQG1_a7qCj_qCkEIfgS1xDZ9JdUHREylKue8w/formResponse";
+    const ENTRY_IDS = {
+        q1: "entry.789122973", q2: "entry.595182903", q3: "entry.1202494646",
+        q4: "entry.1020085423", q5: "entry.1851803580", q6: "entry.599767263",
+        q7: "entry.1230399287", q8: "entry.1373614540", q9: "entry.544609458",
+        q10: "entry.620151219", q11: "entry.609440051", q12: "entry.1289317581",
+        result: "entry.1431082762" 
+    };
+    let appData = { configs: {}, sns: {}, quiz: [], results: {} };
 
-  const API_URL = "https://script.google.com/macros/s/AKfycbyc77PzdRbJZlwuqj-szAWXfT_Xrqo0hHuO4_RV_6FJgyR3oevAIHAHwkGvB8CaYtm7/exec"; 
-  const FORM_POST_URL = "https://docs.google.com/forms/d/e/1FAIpQLSdWAEc-QiDXLWQG1_a7qCj_qCkEIfgS1xDZ9JdUHREylKue8w/formResponse";
-
-  const ENTRY_IDS = {
-    q1: "entry.789122973", q2: "entry.595182903", q3: "entry.1202494646",
-    q4: "entry.1020085423", q5: "entry.1851803580", q6: "entry.599767263",
-    q7: "entry.1230399287", q8: "entry.1373614540", q9: "entry.544609458",
-    q10: "entry.620151219", q11: "entry.609440051", q12: "entry.1289317581",
-    result: "entry.1431082762" 
-  };
-
-  let appData = { configs: {}, sns: {}, quiz: [], results: {} };
-
-  window.onload = async () => {
-    if (API_URL) {
-      try {
-        const response = await fetch(API_URL);
-        const contentType = response.headers.get("content-type");
-        if (contentType && contentType.indexOf("application/json") !== -1) {
-          const data = await response.json();
-          if (data.configs) appData.configs = data.configs;
-          if (data.quiz) appData.quiz = data.quiz;
-          if (data.results) appData.results = data.results;
-          if (data.sns) appData.sns = data.sns;
+    // 1. 初期化とデータ取得
+    window.onload = async () => {
+        if (API_URL) {
+            try {
+                const response = await fetch(API_URL);
+                const data = await response.json();
+                appData = data;
+            } catch (e) { console.error("API Error", e); }
         }
-      } catch (error) {
-        console.error("データ読み込みエラー:", error);
-      }
-    }
-    try { renderStep1(); } catch(e) { console.error("Step1生成エラー:", e); }
-    try { renderStep2(); } catch(e) { console.error("Step2生成エラー:", e); }
-    try { renderLinkButtons(); } catch(e) { console.error("リンク生成エラー:", e); }
+        renderStep1();
+        renderStep2();
+        renderLinkButtons();
 
-    const step1Container = document.getElementById('step1-dynamic-container');
-    if (step1Container) {
-      step1Container.addEventListener('change', function(e) {
+        // イベント監視
+        const step1Container = document.getElementById('step1-dynamic-container');
+        if (step1Container) {
+            step1Container.addEventListener('change', (e) => { 
+                checkVisibility(); 
+                if (e.target.id) document.getElementById(e.target.id).style.borderColor = ''; 
+            });
+        }
+        document.getElementById('loading-screen').style.display = 'none';
+    };
+
+    // 2. アンケート動的生成
+    function renderStep1() {
+        const container = document.getElementById('step1-dynamic-container');
+        const configs = appData.configs[CURRENT_MODE] || appData.configs['normal'] || [];
+        let html = '';
+        configs.forEach(q => {
+            const isDep = !!q.dependsOn;
+            const isReq = (String(q.required).toLowerCase() === "true");
+            html += `<div class="form-group ${isDep ? 'dependent-field' : ''}" id="wrapper-${q.entry_id}" style="display:${isDep ? 'none' : 'block'};">
+                      <label class="form-label">${q.label}${isReq ? ' <span style="color:var(--error-red);">*</span>' : ''}</label>`;
+            if (q.type === 'pulldown' || q.type === 'select') {
+                html += `<select id="${q.entry_id}" class="form-control">
+                          <option value="" disabled selected>選択してください</option>`;
+                const opts = Array.isArray(q.options) ? q.options : String(q.options).split(',');
+                opts.forEach(o => { html += `<option value="${o.trim()}">${o.trim()}</option>`; });
+                html += `</select>`;
+            } else {
+                html += `<textarea id="${q.entry_id}" class="form-control" placeholder="入力してください"></textarea>`;
+            }
+            html += `</div>`;
+        });
+        container.innerHTML = html;
         checkVisibility();
-        if (e.target && e.target.id) clearStep1Error(e.target.id);
-      });
-      step1Container.addEventListener('input', function(e) {
-        checkVisibility();
-        if (e.target && e.target.id) clearStep1Error(e.target.id);
-      });
     }
 
-    const loadingScreen = document.getElementById('loading-screen');
-    if (loadingScreen) loadingScreen.style.display = 'none';
-  };
+    function checkVisibility() {
+        const configs = appData.configs[CURRENT_MODE] || appData.configs['normal'] || [];
+        configs.forEach(q => {
+            if (q.dependsOn) {
+                const parent = document.getElementById(q.dependsOn.id);
+                const wrapper = document.getElementById(`wrapper-${q.entry_id}`);
+                const el = document.getElementById(q.entry_id);
+                if (parent && wrapper) {
+                    if (parent.value === q.dependsOn.value) {
+                        if (wrapper.style.display === 'none') {
+                            wrapper.style.display = 'block';
+                            wrapper.classList.add('slide-down-fade');
+                        }
+                    } else {
+                        wrapper.style.display = 'none';
+                        if (el) el.value = '';
+                    }
+                }
+            }
+        });
+    }
 
-  function renderStep1() {
-    const container = document.getElementById('step1-dynamic-container');
-    if (!container) return;
-    let html = '';
-    let currentConfigs = appData.configs[CURRENT_MODE] || appData.configs['normal'] || [];
-    currentConfigs.forEach(q => {
-      if (!q || !q.entry_id) return;
-      const isDependent = q.dependsOn ? true : false; 
-      const initialDisplay = isDependent ? 'none' : 'block';
-      const dependentClass = isDependent ? 'dependent-field' : '';
-      const isReq = (q.required === true || String(q.required).trim().toLowerCase() === "true");
-      const rawLabel = q.label || "";
-      const labelText = rawLabel.replace(/\*/g, '').trim() + (isReq ? ` <span style="color:var(--error-red);">*</span>` : "");
-      html += `<div class="form-group ${dependentClass}" id="wrapper-${q.entry_id}" style="display: ${initialDisplay};">`;
-      html += `<label for="${q.entry_id}" class="form-label">${labelText}</label>`;
-      if (q.type === 'pulldown' || q.type === 'select') {
-        html += `<select id="${q.entry_id}" name="${q.entry_id}" class="form-control">`;
-        html += `<option value="" disabled selected>選択してください</option>`;
-        let opts = q.options;
-        if (typeof opts === 'string') opts = opts.split(',').map(s => s.trim());
-        if (Array.isArray(opts)) {
-          opts.forEach(opt => { 
-            const val = typeof opt === 'object' ? (opt.value || opt.label) : opt;
-            const lbl = typeof opt === 'object' ? (opt.label || opt.value) : opt;
-            html += `<option value="${val}">${lbl}</option>`; 
-          });
+    function goToStep2() {
+        const configs = appData.configs[CURRENT_MODE] || appData.configs['normal'] || [];
+        let valid = true;
+        configs.forEach(q => {
+            const el = document.getElementById(q.entry_id);
+            const wrapper = document.getElementById(`wrapper-${q.entry_id}`);
+            if (String(q.required).toLowerCase() === "true" && wrapper.style.display !== 'none') {
+                if (!el || !el.value.trim()) {
+                    valid = false;
+                    if(el) el.style.borderColor = 'var(--error-red)';
+                }
+            }
+        });
+        if (!valid) return alert("必須項目を入力してください。");
+        document.getElementById('step1-area').style.display = 'none';
+        document.getElementById('step2-area').style.display = 'block';
+        window.scrollTo(0, 0);
+    }
+
+   // 3. 診断問題 (4段階UI完全復元)
+    function renderStep2() {
+        const container = document.getElementById('questions-container');
+        let html = '';
+        appData.quiz.forEach(q => {
+            const id = ENTRY_IDS[`q${q.no}`];
+            html += `
+                <div class="content-card question-card" id="card-${id}">
+                    <div class="question-text">${q.question}</div>
+                    <div class="quiz-labels">
+                        <span class="label-left">あてはまらない</span>
+                        <span class="label-right">あてはまる</span>
+                    </div>
+                    <div class="scale-row">
+                        <div class="scale-line"></div>
+                        <label class="scale-option" onclick="document.getElementById('card-${id}').classList.remove('error')"><input type="radio" name="${id}" value="1"><div class="scale-bubble size-L"></div></label>
+                        <label class="scale-option" onclick="document.getElementById('card-${id}').classList.remove('error')"><input type="radio" name="${id}" value="2"><div class="scale-bubble size-M"></div></label>
+                        <label class="scale-option" onclick="document.getElementById('card-${id}').classList.remove('error')"><input type="radio" name="${id}" value="3"><div class="scale-bubble size-M"></div></label>
+                        <label class="scale-option" onclick="document.getElementById('card-${id}').classList.remove('error')"><input type="radio" name="${id}" value="4"><div class="scale-bubble size-L"></div></label>
+                    </div>
+                </div>`;
+        });
+        container.innerHTML = html;
+    }
+
+    function renderLinkButtons() {
+        const container = document.getElementById('official-links-container');
+        const sns = appData.sns[CURRENT_MODE] || appData.sns['normal'];
+        let html = '';
+        
+        // Instagram
+        if(sns.insta_url) {
+            html += `<a href="${sns.insta_url}" target="_blank" class="btn-link bg-ig"><i class="fa-brands fa-instagram"></i>&nbsp;Instagram</a>`;
         }
-        html += `</select>`;
-      } else if (q.type === 'textarea') {
-        html += `<textarea id="${q.entry_id}" name="${q.entry_id}" class="form-control" placeholder="ご自由に記入してください"></textarea>`;
-      } else {
-        html += `<input type="text" id="${q.entry_id}" name="${q.entry_id}" class="form-control" placeholder="ご自由に記入してください">`;
-      }
-      html += `</div>`;
-    });
-    container.innerHTML = html;
-    checkVisibility();
-  }
-
-  function checkVisibility() {
-    let currentConfigs = appData.configs[CURRENT_MODE] || appData.configs['normal'] || [];
-    currentConfigs.forEach(q => {
-      if (q.dependsOn && q.dependsOn.id) {
-        const parentEl = document.getElementById(q.dependsOn.id);
-        const wrapper = document.getElementById(`wrapper-${q.entry_id}`);
-        const el = document.getElementById(q.entry_id);
-        if (parentEl && wrapper) {
-          if (parentEl.value === q.dependsOn.value) {
-            if (wrapper.style.display === 'none') { wrapper.style.display = 'block'; wrapper.classList.add('slide-down-fade'); }
-          } else { wrapper.style.display = 'none'; wrapper.classList.remove('slide-down-fade'); if (el) el.value = ''; }
+        // X (スマホで1行に収まるよう「公式X」を「X」に短縮しています)
+        if(sns.x_url) {
+            html += `<a href="${sns.x_url}" target="_blank" class="btn-link bg-x"><i class="fa-brands fa-x-twitter"></i></a>`;
         }
-      }
-    });
-  }
-
-  function clearStep1Error(id) {
-    const el = document.getElementById(id);
-    if (el) el.style.borderColor = '';
-  }
-
-  function goToStep2() {
-    let isValid = true;
-    let currentConfigs = appData.configs[CURRENT_MODE] || appData.configs['normal'] || [];
-    currentConfigs.forEach(q => {
-      if (!q || !q.entry_id) return;
-      const el = document.getElementById(q.entry_id);
-      const wrapper = document.getElementById(`wrapper-${q.entry_id}`);
-      const isReq = (q.required === true || String(q.required).trim().toLowerCase() === "true");
-      if (isReq && wrapper && wrapper.style.display !== 'none') {
-        if (!el || el.value.trim() === '') { isValid = false; if(el) el.style.borderColor = 'var(--error-red)'; } else { if(el) el.style.borderColor = ''; }
-      }
-    });
-    if (!isValid) return alert("必須項目が選択・入力されていません。赤枠の箇所をご確認ください。");
-    document.getElementById('step1-area').style.display = 'none';
-    document.getElementById('step2-area').style.display = 'block';
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
-
-  function renderStep2() {
-    const container = document.getElementById('questions-container');
-    if (!container || !appData.quiz) return;
-    let html = '';
-    appData.quiz.forEach((q) => {
-      const entryId = ENTRY_IDS[`q${q.no}`] || q.entry_id;
-      html += `
-        <div class="content-card question-card" id="card-${entryId}">
-          <div class="question-text">${q.question}</div>
-          <div class="scale-labels"><span>全くそう<br>思わない</span><span>非常に<br>そう思う</span></div>
-          <div class="scale-row">
-            <div class="scale-line"></div>
-            <label class="scale-option" onclick="clearStep2Error('${entryId}')"><input type="radio" name="${entryId}" value="1"><div class="scale-bubble size-L"></div></label>
-            <label class="scale-option" onclick="clearStep2Error('${entryId}')"><input type="radio" name="${entryId}" value="2"><div class="scale-bubble size-M"></div></label>
-            <label class="scale-option" onclick="clearStep2Error('${entryId}')"><input type="radio" name="${entryId}" value="3"><div class="scale-bubble size-M"></div></label>
-            <label class="scale-option" onclick="clearStep2Error('${entryId}')"><input type="radio" name="${entryId}" value="4"><div class="scale-bubble size-L"></div></label>
-          </div>
-        </div>
-      `;
-    });
-    container.innerHTML = html;
-  }
-
-  function clearStep2Error(id) {
-    const el = document.getElementById(`card-${id}`);
-    if (el) el.classList.remove('error');
-  }
-
-  function renderLinkButtons() {
-    const linkContainer = document.getElementById('official-links-container');
-    const snsData = appData.sns[CURRENT_MODE] || appData.sns['normal'];
-    if (!linkContainer || !snsData) return;
-    let html = '';
-    if(snsData.insta_url && snsData.insta_url.length > 2) html += `<a href="${snsData.insta_url}" target="_blank" class="btn-link bg-ig">Instagram</a>`;
-    if(snsData.x_url && snsData.x_url.length > 2) html += `<a href="${snsData.x_url}" target="_blank" class="btn-link bg-x">X(Twitter)</a>`;
-    if(snsData.hp_url && snsData.hp_url.length > 2) html += `<a href="${snsData.hp_url}" target="_blank" class="btn-link bg-hp">公式HP</a>`;
-    linkContainer.innerHTML = html;
-  }
-
-  function submitQuiz() {
-    let allAnswered = true;
-    let scores = { S:0, U:0, A:0, C:0, L:0, F:0, P:0, M:0 };
-    let userAnswers = {};
-    appData.quiz.forEach(q => {
-      const entryId = ENTRY_IDS[`q${q.no}`] || q.entry_id;
-      const selected = document.querySelector(`input[name="${entryId}"]:checked`);
-      const card = document.getElementById(`card-${entryId}`);
-      if (!selected) { if(card) card.classList.add('error'); allAnswered = false; }
-      else { if(card) card.classList.remove('error'); const val = parseInt(selected.value); if (val === 1) scores[q.opposite] += 2; else if (val === 2) scores[q.opposite] += 1; else if (val === 3) scores[q.type] += 1; else if (val === 4) scores[q.type] += 2; userAnswers[entryId] = val; }
-    });
-    if (!allAnswered) { const errEl = document.querySelector('.question-card.error'); if (errEl) errEl.scrollIntoView({ behavior: 'smooth', block: 'center' }); return alert("未回答の質問があります。赤枠の箇所をご確認ください。"); }
-    let rawType = (scores.S >= scores.U ? "S" : "U") + (scores.A >= scores.C ? "A" : "C") + (scores.L >= scores.F ? "L" : "F") + (scores.P >= scores.M ? "P" : "M");
-    let resultData = null;
-    let finalTypeCode = rawType; 
-    if (appData.results) {
-      const targetChars = rawType.toUpperCase().split('').sort().join('');
-      for (const key in appData.results) { if (key.toUpperCase().split('').sort().join('') === targetChars) { resultData = appData.results[key]; finalTypeCode = key; break; } }
-    }
-    sendToGoogleForm(userAnswers, finalTypeCode, resultData);
-  }
-
-  function sendToGoogleForm(step2Answers, typeCode, resultData) {
-    const btn = document.getElementById('btn-submit-result');
-    if (btn) { btn.disabled = true; btn.textContent = "結果を生成中..."; }
-    const loadingScreen = document.getElementById('loading-screen');
-    const loadingText = document.getElementById('loading-text');
-    if (loadingScreen && loadingText) { loadingText.textContent = "診断結果を分析中..."; loadingScreen.style.display = 'flex'; loadingScreen.style.background = 'rgba(255, 255, 255, 0.9)'; }
-    const formData = new FormData();
-    let currentConfigs = appData.configs[CURRENT_MODE] || appData.configs['normal'] || [];
-    currentConfigs.forEach(q => {
-      if (!q || !q.entry_id) return;
-      const el = document.getElementById(q.entry_id);
-      const wrapper = document.getElementById(`wrapper-${q.entry_id}`);
-      if (el && wrapper && wrapper.style.display !== 'none' && el.value) { formData.append(q.entry_id, el.value); }
-    });
-    Object.keys(step2Answers).forEach(entryId => formData.append(entryId, step2Answers[entryId]));
-    formData.append(ENTRY_IDS.result, typeCode);
-    fetch(FORM_POST_URL, { method: 'POST', mode: 'no-cors', body: formData })
-    .then(() => console.log('送信完了'))
-    .catch(error => console.error('送信エラー:', error))
-    .finally(() => showResult(resultData, typeCode));
-  }
-
-  // ★白飛び対策その2: 画像の「onload」を完璧に待つPromiseを作成・保存★
-  async function showResult(result, typeCode) {
-    document.getElementById("step2-area").style.display = "none";
-    if (!result) { result = { type_name: "判定エラー (" + typeCode + ")", color_code: "#2563a8", description: "データなし", job: "エラー", trivia: "エラー" }; }
-    document.getElementById("result-hero").style.background = result.color_code || "#2563a8";
-    document.getElementById("job-box-colored").style.borderLeftColor = result.color_code || "#2563a8";
-    document.getElementById("result-code").textContent = typeCode + " タイプ";
-    document.getElementById("result-job-text").innerHTML = (result.job || "").replace(/\n/g, '<br>');
-    document.getElementById("result-trivia-text").innerHTML = (result.trivia || "").replace(/\n/g, '<br>');
-
-    // GASからのBase64画像データの取得
-    let base64Image = result.avatar_base64 || result.avatar_url;
-    
-    // 【重要】onload待ち Promise をグローバル変数に保存
-    window.avatarLoadPromise = null;
-
-    if (base64Image && base64Image.trim() !== "") {
-      const avatarImg = document.getElementById("avatar-img");
-      
-      // 画像が読み込まれるのを待つPromiseを作成
-      window.avatarLoadPromise = new Promise((resolve) => {
-        avatarImg.onload = resolve;
-        avatarImg.onerror = resolve; // エラーが起きても次へ進めるようにする
-      });
-
-      avatarImg.src = base64Image;
-      document.getElementById("profile-name").textContent = result.type_name || "";
-      document.getElementById("profile-desc").innerHTML = (result.description || "").replace(/\n/g, '<br>');
-      document.getElementById("default-title-layout").style.display = "none";
-      document.getElementById("result-description").style.display = "none";
-      document.getElementById("profile-card-layout").style.display = "flex";
-    } else {
-      document.getElementById("result-name").textContent = result.type_name || "";
-      document.getElementById("result-description").innerHTML = (result.description || "").replace(/\n/g, '<br>');
-      document.getElementById("default-title-layout").style.display = "block";
-      document.getElementById("result-description").style.display = "block";
-      document.getElementById("profile-card-layout").style.display = "none";
+        // 公式HP (こちらも文字が溢れないよう「公式HP」にしています)
+        if(sns.hp_url) {
+            html += `<a href="${sns.hp_url}" target="_blank" class="btn-link bg-hp"><i class="fa-solid fa-house"></i>&nbsp;公式HP</a>`;
+        }
+        
+        container.innerHTML = html;
     }
 
-    const snsData = appData.sns[CURRENT_MODE] || appData.sns['normal'];
-    if (snsData && snsData.insta_hashtags) { document.getElementById('share-hashtags-area').style.display = 'block'; document.getElementById('insta-hashtags-text').textContent = snsData.insta_hashtags; }
-    const loadingScreen = document.getElementById('loading-screen');
-    if (loadingScreen) loadingScreen.style.display = 'none';
-    document.getElementById("result-area").style.display = "block";
-    document.getElementById("action-area").style.display = "block";
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    window.currentResult = result;
-  }
+    // 4. 計算と結果表示
+    function submitQuiz() {
+        let scores = { S:0, U:0, A:0, C:0, L:0, F:0, P:0, M:0 };
+        let ans = {}; let ok = true;
+        appData.quiz.forEach(q => {
+            const id = ENTRY_IDS[`q${q.no}`];
+            const sel = document.querySelector(`input[name="${id}"]:checked`);
+            if(!sel) { ok = false; document.getElementById(`card-${id}`).classList.add('error'); }
+            else {
+                const v = parseInt(sel.value);
+                if(v===1) scores[q.opposite]+=2; else if(v===2) scores[q.opposite]+=1;
+                else if(v===3) scores[q.type]+=1; else if(v===4) scores[q.type]+=2;
+                ans[id] = v;
+            }
+        });
+        if(!ok) {
+            alert("未回答の質問があります。");
+            const err = document.querySelector('.error');
+            if(err) err.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return;
+        }
 
-  function shareToX() {
-    const result = window.currentResult;
-    const snsData = appData.sns[CURRENT_MODE] || appData.sns['normal'];
-    if (!result || !snsData) return;
-    const text = `${snsData.x_text}「${result.type_name}」でした！\n\n`;
-    const shareUrl = window.location.origin + window.location.pathname; 
-    const hashtags = snsData.x_hashtags;
-    const tweetContent = encodeURIComponent(`${text}\n${shareUrl}`);
-    const hashtagQuery = hashtags ? `&hashtags=${encodeURIComponent(hashtags)}` : "";
-    window.open(`https://twitter.com/intent/tweet?text=${tweetContent}${hashtagQuery}`, '_blank');
-  }
-
-  // ★白飛び対策その3: onloadPromiseを待ってから、setTimeoutで撮影する (async/await化) ★
-  async function shareToInstagram() {
-    const resultArea = document.getElementById('result-area');
-    const originalPadding = resultArea.style.paddingBottom;
-    resultArea.style.paddingBottom = "30px"; 
-    const shareBtn = document.getElementById('btn-ig-share');
-    const originalBtnText = shareBtn.innerHTML;
-    shareBtn.innerHTML = "⏳ 画像を生成中...";
-    shareBtn.disabled = true;
-
-    // 【最重要】GASから来たBase64画像の描画完了を完璧に待つ
-    if (window.avatarLoadPromise) {
-      console.log("アバター画像の描画完了を待機します...");
-      await window.avatarLoadPromise;
-      console.log("アバター画像の描画が完了しました。");
+        const typeCode = (scores.S>=scores.U?"S":"U")+(scores.A>=scores.C?"A":"C")+(scores.L>=scores.F?"L":"F")+(scores.P>=scores.M?"P":"M");
+        let resultData = null;
+        const sortedKey = typeCode.split('').sort().join('');
+        for(let k in appData.results) { if(k.split('').sort().join('') === sortedKey) { resultData = appData.results[k]; break; } }
+        
+        sendToForm(ans, typeCode, resultData);
     }
 
-    // ★白飛び対策その4: 描画完了後、さらに0.5秒の予備待機時間を設ける (iOS対策)★
-    setTimeout(() => {
-      // ★白飛び対策その5: バージョン1.3.3のオプション、backgroundColorは白を指定 ★
-      html2canvas(resultArea, { 
-        scale: 2, 
-        useCORS: true, 
-        allowTaint: true,         // Base64画像の描画に必要
-        backgroundColor: "#ffffff", // 白飛び（透過）を防ぐために白を指定
-        logging: true 
-      }).then(canvas => {
-        resultArea.style.paddingBottom = originalPadding;
-        shareBtn.innerHTML = originalBtnText;
-        shareBtn.disabled = false;
-        canvas.toBlob(blob => {
-          if (!blob) return alert("画像の生成に失敗しました。");
-          const fileName = 'cbti_result.png';
-          const file = new File([blob], fileName, { type: 'image/png' });
-          if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            navigator.share({ files: [file], title: '土木16タイプ診断結果', text: '私の診断結果です！' }).catch((error) => console.log('Sharing failed', error));
-          } else {
-            const link = document.createElement('a'); link.download = fileName; link.href = URL.createObjectURL(blob); link.click();
-            if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) { setTimeout(() => { window.location.href = "instagram://camera"; }, 500); }
-          }
-        }, 'image/png');
-      }).catch(err => {
-        console.error("画像生成エラー:", err);
-        alert("画像の生成中にエラーが発生しました。");
-        resultArea.style.paddingBottom = originalPadding;
-        shareBtn.innerHTML = originalBtnText;
-        shareBtn.disabled = false;
-      });
-    }, 500); // onload後の予備待機
-  }
+    function sendToForm(ans, type, res) {
+        const btn = document.getElementById('btn-submit-result');
+        btn.disabled = true; btn.textContent = "送信中...";
+        const fd = new FormData();
+        const configs = appData.configs[CURRENT_MODE] || appData.configs['normal'] || [];
+        configs.forEach(q => { const el = document.getElementById(q.entry_id); if(el && el.value) fd.append(q.entry_id, el.value); });
+        Object.keys(ans).forEach(k => fd.append(k, ans[k]));
+        fd.append(ENTRY_IDS.result, type);
+        fetch(FORM_POST_URL, { method:'POST', mode:'no-cors', body:fd }).finally(() => showResult(res, type));
+    }
+
+    async function showResult(res, type) {
+        document.getElementById("step2-area").style.display = "none";
+        if (!res) res = { type_name: "判定エラー", color_code: "#2563a8", description: "データがありません。" };
+        
+        // 色の同期
+        const mainCol = res.color_code || "#2563a8";
+        document.documentElement.style.setProperty('--blue-mid', mainCol);
+        document.getElementById("result-hero-box").style.backgroundColor = mainCol;
+        document.getElementById("job-box-colored").style.borderLeftColor = mainCol;
+
+        // タイプ名・説明の表示
+        document.getElementById("result-code").textContent = type + " タイプ";
+        document.getElementById("result-type-name-display").textContent = res.type_name;
+        document.getElementById("result-description").innerHTML = (res.description || "").replace(/\n/g, '<br>');
+        document.getElementById("result-job-text").innerHTML = (res.job || "").replace(/\n/g, '<br>');
+        document.getElementById("result-trivia-text").innerHTML = (res.trivia || "").replace(/\n/g, '<br>');
+
+        // アバター処理
+        const base64 = res.avatar_base64 || res.avatar_url;
+        const avatarImg = document.getElementById("avatar-img");
+        window.avatarLoadPromise = null;
+        if (base64 && base64.trim() !== "") {
+            window.avatarLoadPromise = new Promise(r => { avatarImg.onload = r; avatarImg.onerror = r; });
+            avatarImg.src = base64;
+            document.getElementById("profile-name-text").textContent = res.type_name;
+            document.getElementById("profile-desc-text").innerHTML = (res.description || "").replace(/\n/g, '<br>');
+            document.getElementById("result-description").style.display = "none";
+            document.getElementById("profile-card-layout").style.display = "flex";
+        } else {
+            document.getElementById("profile-card-layout").style.display = "none";
+            document.getElementById("result-description").style.display = "block";
+        }
+
+        const sns = appData.sns[CURRENT_MODE] || appData.sns['normal'];
+        if(sns.insta_hashtags) { 
+            document.getElementById('share-hashtags-area').style.display='block'; 
+            document.getElementById('insta-hashtags-text').textContent=sns.insta_hashtags; 
+        }
+        
+        document.getElementById("result-area").style.display = "block";
+        document.getElementById("action-area").style.display = "block";
+        window.scrollTo(0,0);
+        window.currentResult = res; window.currentTypeCode = type;
+    }
+
+    // 5. Canvas API 描画 (文字高さ自動計算版)
+    function calcTextHeight(ctx, text, maxWidth, lineHeight) {
+        const lines = text.replace(/<br>/g, '\n').split('\n');
+        let count = 0;
+        lines.forEach(l => {
+            let line = '';
+            for (let n = 0; n < l.length; n++) {
+                let test = line + l[n];
+                if (ctx.measureText(test).width > maxWidth && n > 0) { count++; line = l[n]; } else { line = test; }
+            }
+            count++;
+        });
+        return count * lineHeight;
+    }
+
+    function fillTextWrap(ctx, text, x, y, maxWidth, lineHeight) {
+        const lines = text.replace(/<br>/g, '\n').split('\n');
+        let curY = y;
+        lines.forEach(l => {
+            let line = '';
+            for (let n = 0; n < l.length; n++) {
+                let test = line + l[n];
+                if (ctx.measureText(test).width > maxWidth && n > 0) { ctx.fillText(line, x, curY); line = l[n]; curY += lineHeight; } else { line = test; }
+            }
+            ctx.fillText(line, x, curY); curY += lineHeight;
+        });
+        return curY;
+    }
+
+    function roundRect(ctx, x, y, w, h, r) {
+        ctx.beginPath(); ctx.moveTo(x+r, y); ctx.lineTo(x+w-r, y); ctx.quadraticCurveTo(x+w, y, x+w, y+r); ctx.lineTo(x+w, y+h-r); ctx.quadraticCurveTo(x+w, y+h, x+w-r, y+h); ctx.lineTo(x+r, y+h); ctx.quadraticCurveTo(x, y+h, x, y+h-r); ctx.lineTo(x, y+r); ctx.quadraticCurveTo(x, y, x+r, y); ctx.closePath();
+    }
+
+    async function generateNativeCanvasImage(res, type) {
+        return new Promise(resolve => {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = 1080; canvas.height = 2000; // 高めに確保
+            const mainCol = res.color_code || "#2563a8";
+
+            ctx.fillStyle = "#ffffff"; ctx.fillRect(0,0,1080,2000);
+            ctx.fillStyle = mainCol; ctx.fillRect(0,0,1080,400);
+
+            // バッジ
+            ctx.font = "bold 45px 'Noto Sans JP'";
+            const bText = type + " タイプ";
+            const bW = ctx.measureText(bText).width;
+            ctx.fillStyle = "#ffffff"; roundRect(ctx, 540-bW/2-40, 60, bW+80, 80, 40); ctx.fill();
+            ctx.fillStyle = "#333333"; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.fillText(bText, 540, 105);
+
+            // メインタイプ名
+            ctx.fillStyle = "#ffffff"; ctx.font = "bold 90px 'Noto Sans JP'";
+            ctx.fillText(res.type_name, 540, 270, 980);
+
+            let curY = 460; ctx.textAlign = "left"; ctx.textBaseline = "top";
+            const avatar = document.getElementById("avatar-img");
+
+            if (res.avatar_base64 || res.avatar_url) {
+                ctx.font = "bold 32px 'Noto Sans JP'";
+                const h = Math.max(320, 140 + calcTextHeight(ctx, res.description || "", 620, 50));
+                ctx.fillStyle = "#ffffff"; ctx.shadowColor="rgba(0,0,0,0.12)"; ctx.shadowBlur=35; roundRect(ctx, 60, curY, 960, h, 24); ctx.fill();
+                ctx.shadowBlur=0; ctx.strokeStyle="#d8e8f5"; ctx.lineWidth=3; ctx.stroke();
+                if(avatar.complete && avatar.naturalWidth !== 0) {
+                    ctx.save(); roundRect(ctx, 100, curY+50, 180, 180, 20); ctx.clip(); ctx.drawImage(avatar, 100, curY+50, 180, 180); ctx.restore();
+                }
+                ctx.fillStyle = mainCol; ctx.font = "bold 48px 'Noto Sans JP'"; ctx.fillText(res.type_name, 320, curY+65, 600);
+                ctx.fillStyle = "#222222"; ctx.font = "bold 32px 'Noto Sans JP'"; fillTextWrap(ctx, res.description || "", 320, curY+140, 620, 50);
+                curY += h + 60;
+            } else {
+                ctx.fillStyle = "#222222"; ctx.font = "bold 46px 'Noto Sans JP'"; curY = fillTextWrap(ctx, res.description || "", 80, curY, 920, 68) + 60;
+            }
+
+            // ボックス
+            ctx.font = "bold 38px 'Noto Sans JP'";
+            const jobH = calcTextHeight(ctx, res.job || "", 860, 58);
+            const trivH = calcTextHeight(ctx, res.trivia || "", 860, 58);
+            const boxH = 60+70+jobH+50+5+60+70+trivH+60;
+            ctx.fillStyle="#f5faff"; roundRect(ctx, 60, curY, 960, boxH, 20); ctx.fill();
+            ctx.fillStyle=mainCol; ctx.fillRect(60, curY, 18, boxH);
+            
+            let bY = curY+65;
+            ctx.fillStyle=mainCol; ctx.fillText("■ おすすめの職種・就職先イメージ", 120, bY);
+            ctx.fillStyle="#222222"; bY = fillTextWrap(ctx, res.job || "", 120, bY+70, 860, 58) + 40;
+            ctx.fillStyle="#d8e8f5"; ctx.fillRect(120, bY, 840, 4);
+            ctx.fillStyle=mainCol; ctx.fillText("💡 土木豆知識", 120, bY+65);
+            ctx.fillStyle="#222222"; fillTextWrap(ctx, res.trivia || "", 120, bY+135, 860, 58);
+            
+            curY += boxH + 90;
+            const sns = appData.sns[CURRENT_MODE] || appData.sns['normal'];
+            ctx.fillStyle=mainCol; ctx.font="bold 48px 'Noto Sans JP'"; ctx.textAlign="center"; ctx.fillText(sns.insta_hashtags || "", 540, curY);
+
+            // 最終トリミング
+            const final = document.createElement('canvas'); final.width=1080; final.height=Math.max(1350, curY+120);
+            const fctx = final.getContext('2d'); fctx.fillStyle="#ffffff"; fctx.fillRect(0,0,1080,final.height);
+            fctx.drawImage(canvas, 0, 0); final.toBlob(b => resolve(b), 'image/png');
+        });
+    }
+
+    async function shareToInstagram() {
+        const btn = document.getElementById('btn-ig-share');
+        btn.disabled = true; btn.innerHTML = "⏳ 生成中...";
+        try {
+            if (window.avatarLoadPromise) await window.avatarLoadPromise;
+            const blob = await generateNativeCanvasImage(window.currentResult, window.currentTypeCode);
+            const file = new File([blob], 'cbti_result.png', { type: 'image/png' });
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                await navigator.share({ files: [file], title: '土木16タイプ診断結果' });
+            } else {
+                const link = document.createElement('a'); link.download = 'cbti_result.png';
+                link.href = URL.createObjectURL(blob); link.click();
+            }
+        } catch (e) { alert("生成に失敗しました。再度お試しください。"); }
+        finally { btn.disabled = false; btn.innerHTML = "📸 画像をシェア / 保存する"; }
+    }
+
+    function shareToX() {
+        const res = window.currentResult;
+        const sns = appData.sns[CURRENT_MODE] || appData.sns['normal'];
+        const text = encodeURIComponent(`${sns.x_text || '診断結果'}「${res.type_name}」でした！\n${window.location.href}\n`);
+        window.open(`https://twitter.com/intent/tweet?text=${text}&hashtags=${encodeURIComponent(sns.x_hashtags || 'CBTI')}`, '_blank');
+    }
 </script>
 </body>
 </html>
