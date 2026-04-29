@@ -614,67 +614,68 @@
         return new Promise(resolve => {
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
-            canvas.width = 1080; canvas.height = 2000; // 高めに確保
+            canvas.width = 1080; canvas.height = 2500; // 描画用の高さを多めに確保
             const mainCol = res.color_code || "#2563a8";
 
-            ctx.fillStyle = "#ffffff"; ctx.fillRect(0,0,1080,2000);
-            ctx.fillStyle = mainCol; ctx.fillRect(0,0,1080,400);
+            ctx.fillStyle = "#ffffff"; ctx.fillRect(0,0,1080,2500);
+            ctx.fillStyle = mainCol; ctx.fillRect(0,0,1080,550); // インスタのUIを避けるためヘッダーを550まで長くする
 
-            // バッジ
-            ctx.font = "bold 45px 'Noto Sans JP'";
+            // バッジ（位置を下にずらす）
+            ctx.font = "bold 45px 'Zen Maru Gothic', 'Noto Sans JP', sans-serif";
             const bText = type + " タイプ";
             const bW = ctx.measureText(bText).width;
-            ctx.fillStyle = "#ffffff"; roundRect(ctx, 540-bW/2-40, 60, bW+80, 80, 40); ctx.fill();
-            ctx.fillStyle = "#333333"; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.fillText(bText, 540, 105);
+            ctx.fillStyle = "#ffffff"; roundRect(ctx, 540-bW/2-40, 120, bW+80, 80, 40); ctx.fill();
+            ctx.fillStyle = "#333333"; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.fillText(bText, 540, 165);
 
             // メインタイプ名
-            ctx.fillStyle = "#ffffff"; ctx.font = "bold 90px 'Noto Sans JP'";
-            ctx.fillText(res.type_name, 540, 270, 980);
+            ctx.fillStyle = "#ffffff"; ctx.font = "bold 90px 'Zen Maru Gothic', 'Noto Sans JP', sans-serif";
+            ctx.fillText(res.type_name, 540, 330, 980);
 
-            let curY = 460; ctx.textAlign = "left"; ctx.textBaseline = "top";
+            let curY = 600; ctx.textAlign = "left"; ctx.textBaseline = "top";
             const avatar = document.getElementById("avatar-img");
 
             if (res.avatar_base64 || res.avatar_url) {
-                ctx.font = "bold 32px 'Noto Sans JP'";
+                ctx.font = "bold 32px 'Zen Maru Gothic', 'Noto Sans JP', sans-serif";
                 const h = Math.max(320, 140 + calcTextHeight(ctx, res.description || "", 620, 50));
                 ctx.fillStyle = "#ffffff"; ctx.shadowColor="rgba(0,0,0,0.12)"; ctx.shadowBlur=35; roundRect(ctx, 60, curY, 960, h, 24); ctx.fill();
                 ctx.shadowBlur=0; ctx.strokeStyle="#d8e8f5"; ctx.lineWidth=3; ctx.stroke();
                 if(avatar.complete && avatar.naturalWidth !== 0) {
                     ctx.save(); roundRect(ctx, 100, curY+50, 180, 180, 20); ctx.clip(); ctx.drawImage(avatar, 100, curY+50, 180, 180); ctx.restore();
                 }
-                ctx.fillStyle = mainCol; ctx.font = "bold 48px 'Noto Sans JP'"; ctx.fillText(res.type_name, 320, curY+65, 600);
-                ctx.fillStyle = "#222222"; ctx.font = "bold 32px 'Noto Sans JP'"; fillTextWrap(ctx, res.description || "", 320, curY+140, 620, 50);
+                ctx.fillStyle = mainCol; ctx.font = "bold 48px 'Zen Maru Gothic', 'Noto Sans JP', sans-serif"; ctx.fillText(res.type_name, 320, curY+65, 600);
+                ctx.fillStyle = "#222222"; ctx.font = "bold 32px 'Zen Maru Gothic', 'Noto Sans JP', sans-serif"; fillTextWrap(ctx, res.description || "", 320, curY+140, 620, 50);
                 curY += h + 60;
             } else {
-                ctx.fillStyle = "#222222"; ctx.font = "bold 46px 'Noto Sans JP'"; curY = fillTextWrap(ctx, res.description || "", 80, curY, 920, 68) + 60;
+                ctx.fillStyle = "#222222"; ctx.font = "bold 46px 'Zen Maru Gothic', 'Noto Sans JP', sans-serif"; curY = fillTextWrap(ctx, res.description || "", 80, curY, 920, 68) + 60;
             }
 
-            // ボックス
-            ctx.font = "bold 38px 'Noto Sans JP'";
+            // ボックス（左右の余白を少し増やして見切れを完全に防ぐ）
+            ctx.font = "bold 38px 'Zen Maru Gothic', 'Noto Sans JP', sans-serif";
             const jobH = calcTextHeight(ctx, res.job || "", 860, 58);
             const trivH = calcTextHeight(ctx, res.trivia || "", 860, 58);
             const boxH = 60+70+jobH+50+5+60+70+trivH+60;
-            ctx.fillStyle="#f5faff"; roundRect(ctx, 60, curY, 960, boxH, 20); ctx.fill();
-            ctx.fillStyle=mainCol; ctx.fillRect(60, curY, 18, boxH);
+            ctx.fillStyle="#f5faff"; roundRect(ctx, 80, curY, 920, boxH, 20); ctx.fill(); 
+            ctx.fillStyle=mainCol; ctx.fillRect(80, curY, 18, boxH);
             
             let bY = curY+65;
-            ctx.fillStyle=mainCol; ctx.fillText("■ おすすめの職種・就職先イメージ", 120, bY);
-            ctx.fillStyle="#222222"; bY = fillTextWrap(ctx, res.job || "", 120, bY+70, 860, 58) + 40;
-            ctx.fillStyle="#d8e8f5"; ctx.fillRect(120, bY, 840, 4);
-            ctx.fillStyle=mainCol; ctx.fillText("💡 土木豆知識", 120, bY+65);
-            ctx.fillStyle="#222222"; fillTextWrap(ctx, res.trivia || "", 120, bY+135, 860, 58);
+            ctx.fillStyle=mainCol; ctx.fillText("■ おすすめの職種・就職先イメージ", 140, bY);
+            ctx.fillStyle="#222222"; bY = fillTextWrap(ctx, res.job || "", 140, bY+70, 800, 58) + 40;
+            ctx.fillStyle="#d8e8f5"; ctx.fillRect(140, bY, 800, 4);
+            ctx.fillStyle=mainCol; ctx.fillText("💡 土木豆知識", 140, bY+65);
+            ctx.fillStyle="#222222"; fillTextWrap(ctx, res.trivia || "", 140, bY+135, 800, 58);
             
-            curY += boxH + 90;
+            curY += boxH + 110;
             const sns = appData.sns[CURRENT_MODE] || appData.sns['normal'];
-            ctx.fillStyle=mainCol; ctx.font="bold 48px 'Noto Sans JP'"; ctx.textAlign="center"; ctx.fillText(sns.insta_hashtags || "", 540, curY);
+            ctx.fillStyle=mainCol; ctx.font="bold 48px 'Zen Maru Gothic', 'Noto Sans JP', sans-serif"; ctx.textAlign="center"; ctx.fillText(sns.insta_hashtags || "", 540, curY);
 
-            // 最終トリミング
-            const final = document.createElement('canvas'); final.width=1080; final.height=Math.max(1350, curY+120);
+            // 最終トリミング (インスタのストーリーにピッタリハマる 1080x1920 に固定)
+            const final = document.createElement('canvas'); final.width=1080; final.height=Math.max(1920, curY+150);
             const fctx = final.getContext('2d'); fctx.fillStyle="#ffffff"; fctx.fillRect(0,0,1080,final.height);
-            fctx.drawImage(canvas, 0, 0); final.toBlob(b => resolve(b), 'image/png');
+            fctx.drawImage(canvas, 0, 0); 
+            final.toBlob(b => resolve(b), 'image/png');
         });
     }
-
+    
     async function shareToInstagram() {
         const btn = document.getElementById('btn-ig-share');
         btn.disabled = true; btn.innerHTML = "⏳ 生成中...";
