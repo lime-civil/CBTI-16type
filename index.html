@@ -324,6 +324,22 @@
                 <div class="link-box-title">もっと土木を知りたいならここ！</div>
                 <div id="official-links-container" style="display: flex; gap: 8px;"></div>
             </div>
+
+            <!-- ▼▼▼ ここから追加 ▼▼▼ -->
+            <!-- 全16タイプ一覧（アコーディオン） -->
+            <div style="margin-top: 35px; margin-bottom: 25px; text-align: center;">
+                <button type="button" onclick="toggleTypeList()" style="background: #e1eefaa8; color: var(--blue-mid); border: none; padding: 12px 24px; border-radius: 20px; font-weight: bold; cursor: pointer; font-family: 'Zen Maru Gothic', sans-serif; transition: all 0.2s ease;">
+                    ▼ 全16タイプ一覧を見る
+                </button>
+                <div id="all-types-list" style="display: none; margin-top: 15px; text-align: left; background: #f5faff; padding: 20px; border-radius: 12px; border: 2px solid #d8e8f5;">
+                    <ul id="dynamic-type-list" style="list-style-type: none; padding: 0; margin: 0; line-height: 2; font-weight: bold; color: #333;">
+                        <!-- ここにJavaScriptで自動生成されます -->
+                    </ul>
+                </div>
+            </div>
+            <!-- ▲▲▲ ここまで追加 ▲▲▲ -->
+
+            <!-- ↓ 元々の327行目（下にずれます） ↓ -->
             <button type="button" class="btn-submit" style="margin-top: 28px; background: #5a7a96 !important;" onclick="location.reload()">🔄 もう一度診断する</button>
         </div>
     </div>
@@ -568,7 +584,8 @@
         const sns = appData.sns[CURRENT_MODE] || appData.sns['normal'];
         if(sns.insta_hashtags) { 
             document.getElementById('share-hashtags-area').style.display='block'; 
-            document.getElementById('insta-hashtags-text').textContent=sns.insta_hashtags; 
+            // カンマを半角スペースに置き換えて表示する
+            document.getElementById('insta-hashtags-text').textContent = sns.insta_hashtags.replace(/,/g, '  '); 
         }
         
         document.getElementById("result-area").style.display = "block";
@@ -675,7 +692,7 @@
             final.toBlob(b => resolve(b), 'image/png');
         });
     }
-    
+
     async function shareToInstagram() {
         const btn = document.getElementById('btn-ig-share');
         btn.disabled = true; btn.innerHTML = "⏳ 生成中...";
@@ -695,9 +712,52 @@
 
     function shareToX() {
         const res = window.currentResult;
+        const typeCode = window.currentTypeCode;
         const sns = appData.sns[CURRENT_MODE] || appData.sns['normal'];
-        const text = encodeURIComponent(`${sns.x_text || '診断結果'}「${res.type_name}」でした！\n${window.location.href}\n`);
-        window.open(`https://twitter.com/intent/tweet?text=${text}&hashtags=${encodeURIComponent(sns.x_hashtags || 'CBTI')}`, '_blank');
+        
+        // [TYPE]をアルファベットに、[TITLE]をタイプ名に置き換える
+        let rawText = sns.x_text || "私の土木タイプは 【[TYPE]】 [TITLE] でした！";
+        rawText = rawText.replace(/\[TYPE\]/g, typeCode).replace(/\[TITLE\]/g, res.type_name);
+        
+        // Xのシステムが勝手に「#」をつけるため、スプレッドシート側の「#」と「空白」を消去してカンマ区切りにする
+        let cleanTags = (sns.x_hashtags || "CBTI,土木サークル").replace(/[#＃\s]/g, '');
+
+        const text = encodeURIComponent(rawText + "\n" + window.location.href + "\n");
+        window.open(`https://twitter.com/intent/tweet?text=${text}&hashtags=${encodeURIComponent(cleanTags)}`, '_blank');
+    }
+
+    // 全16タイプ一覧の開閉と自動生成（アバター画像付き版）
+    function toggleTypeList() {
+        const listDiv = document.getElementById('all-types-list');
+        const ul = document.getElementById('dynamic-type-list');
+        
+        if (listDiv.style.display === 'none' || listDiv.style.display === '') {
+            listDiv.style.display = 'block';
+            // <li>タグが0個かどうかで判定する
+            if (ul.children.length === 0) {
+                for (let key in appData.results) {
+                    const res = appData.results[key];
+                    // アバター画像のURLまたは画像データを取得
+                    const imgSrc = res.avatar_base64 || res.avatar_url;
+                    
+                    // 画像がある場合はimgタグ、まだ画像が設定されていない場合は仮の青い枠を表示
+                    const imgHtml = imgSrc 
+                        ? `<img src="${imgSrc}" style="width: 45px; height: 45px; border-radius: 8px; object-fit: cover; border: 2px solid var(--blue-pale); flex-shrink: 0;">` 
+                        : `<div style="width: 45px; height: 45px; border-radius: 8px; background-color: #f8fbff; border: 2px solid var(--blue-pale); flex-shrink: 0;"></div>`;
+
+                    // アイコンとテキストを横並び（Flexbox）で綺麗に配置する
+                    ul.innerHTML += `<li style="border-bottom: 1px dashed #d8e8f5; margin-bottom: 12px; padding-bottom: 12px; display: flex; align-items: center; gap: 15px;">
+                        ${imgHtml}
+                        <div style="display: flex; flex-direction: column; justify-content: center;">
+                            <span style="color: var(--blue-mid); font-size: 0.85em; line-height: 1.2;">${key}</span>
+                            <span style="line-height: 1.4; color: var(--text-main); font-weight: bold;">${res.type_name}</span>
+                        </div>
+                    </li>`;
+                }
+            }
+        } else {
+            listDiv.style.display = 'none';
+        }
     }
 </script>
 </body>
