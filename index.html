@@ -251,6 +251,51 @@
         .type-name {
             font-family: 'Zen Maru Gothic', sans-serif !important;
         }
+
+        /* ==========================================
+           16タイプ図鑑（全画面オーバーレイ）
+           ========================================== */
+        #zukan-overlay {
+            position: fixed; inset: 0; background: #e8f3ff; z-index: 9999;
+            overflow-y: auto; display: none; opacity: 0; transition: opacity 0.4s ease;
+            padding: 0; font-family: 'Zen Maru Gothic', 'Noto Sans JP', sans-serif;
+        }
+        #zukan-overlay.show { display: block; opacity: 1; }
+        .zukan-header {
+            position: sticky; top: 0; background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(5px); padding: 15px 20px; display: flex;
+            justify-content: space-between; align-items: center;
+            box-shadow: 0 4px 15px rgba(26,58,92,0.08); z-index: 10;
+        }
+        .zukan-title { font-size: 1.2em; font-weight: 900; color: var(--blue-deep); }
+        .btn-close-zukan {
+            background: #f0f4f8; border: none; padding: 8px 16px; border-radius: 20px;
+            font-weight: bold; color: var(--text-main); cursor: pointer;
+        }
+        .zukan-content { padding: 20px 15px 50px; max-width: 600px; margin: 0 auto; }
+        
+        /* 軸説明の表デザイン */
+        .axis-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .axis-table th, .axis-table td { padding: 12px; border-bottom: 1px solid #d8e8f5; text-align: left; }
+        .axis-table th { background: var(--blue-mid); color: #fff; font-size: 0.85em; font-weight: bold; white-space: nowrap; }
+        .axis-table td { font-size: 0.85em; color: var(--text-main); line-height: 1.5; }
+        .axis-table .code-cell { font-weight: 900; color: var(--blue-mid); font-size: 1.1em; text-align: center; }
+
+        /* 16タイプリストのデザイン */
+        .zukan-list { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 15px; }
+        .zukan-card {
+            background: #fff; border-radius: 15px; padding: 15px; display: flex; gap: 15px;
+            box-shadow: 0 4px 12px rgba(26,58,92,0.06); border: 2px solid transparent;
+        }
+        .zukan-card.is-my-type { border-color: var(--blue-mid); background: #f5faff; }
+        .zukan-avatar { width: 60px; height: 60px; border-radius: 10px; object-fit: cover; background: #f0f4f8; flex-shrink: 0; }
+        .zukan-text { flex-grow: 1; }
+        .zukan-code { font-size: 0.8em; font-weight: 900; color: var(--blue-mid); letter-spacing: 0.1em; display: block; margin-bottom: 2px; }
+        .zukan-name { font-size: 1.1em; font-weight: 900; color: var(--text-main); margin-bottom: 4px; }
+        .zukan-desc { font-size: 0.85em; color: var(--text-sub); line-height: 1.4; font-weight: 500; }
+        
+        /* おすすめ職種タグ */
+        .zukan-job { font-size: 0.75em; color: var(--blue-deep); background: #f0f7ff; padding: 6px 10px; border-radius: 6px; margin-top: 8px; display: inline-block; font-weight: bold; border: 1px solid #d8e8f5; }
         
     </style>
 </head>
