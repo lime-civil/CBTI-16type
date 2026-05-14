@@ -373,14 +373,9 @@
             <!-- ▼▼▼ ここから追加 ▼▼▼ -->
             <!-- 全16タイプ一覧（アコーディオン） -->
             <div style="margin-top: 35px; margin-bottom: 25px; text-align: center;">
-                <button type="button" onclick="toggleTypeList()" style="background: #e1eefaa8; color: var(--blue-mid); border: none; padding: 12px 24px; border-radius: 20px; font-weight: bold; cursor: pointer; font-family: 'Zen Maru Gothic', sans-serif; transition: all 0.2s ease;">
-                    ▼ 全16タイプ一覧を見る
+                <button type="button" onclick="openZukan()" style="background: #e1eefaa8; color: var(--blue-mid); border: none; padding: 15px 30px; border-radius: 30px; font-weight: 900; cursor: pointer; font-family: 'Zen Maru Gothic', sans-serif; transition: all 0.2s ease; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+                    📖 土木16タイプ図鑑を開く
                 </button>
-                <div id="all-types-list" style="display: none; margin-top: 15px; text-align: left; background: #f5faff; padding: 20px; border-radius: 12px; border: 2px solid #d8e8f5;">
-                    <ul id="dynamic-type-list" style="list-style-type: none; padding: 0; margin: 0; line-height: 2; font-weight: bold; color: #333;">
-                        <!-- ここにJavaScriptで自動生成されます -->
-                    </ul>
-                </div>
             </div>
             <!-- ▲▲▲ ここまで追加 ▲▲▲ -->
 
@@ -772,37 +767,85 @@
     }
 
     // 全16タイプ一覧の開閉と自動生成（アバター画像付き版）
-    function toggleTypeList() {
-        const listDiv = document.getElementById('all-types-list');
-        const ul = document.getElementById('dynamic-type-list');
+    // 図鑑を開く処理
+    function openZukan() {
+        const overlay = document.getElementById('zukan-overlay');
+        const axisTbody = document.getElementById('zukan-axis-tbody');
+        const typeList = document.getElementById('zukan-type-list');
         
-        if (listDiv.style.display === 'none' || listDiv.style.display === '') {
-            listDiv.style.display = 'block';
-            // <li>タグが0個かどうかで判定する
-            if (ul.children.length === 0) {
-                for (let key in appData.results) {
-                    const res = appData.results[key];
-                    // アバター画像のURLまたは画像データを取得
-                    const imgSrc = res.avatar_base64 || res.avatar_url;
-                    
-                    // 画像がある場合はimgタグ、まだ画像が設定されていない場合は仮の青い枠を表示
-                    const imgHtml = imgSrc 
-                        ? `<img src="${imgSrc}" style="width: 45px; height: 45px; border-radius: 8px; object-fit: cover; border: 2px solid var(--blue-pale); flex-shrink: 0;">` 
-                        : `<div style="width: 45px; height: 45px; border-radius: 8px; background-color: #f8fbff; border: 2px solid var(--blue-pale); flex-shrink: 0;"></div>`;
+        // 1. 軸説明の生成
+        if (axisTbody.children.length === 0) {
+            const axisData = appData.axis || [];
+            let axisHtml = '';
+            axisData.forEach(row => {
+                const code = row['axis_code'] || '';
+                const name = row['axis_name'] || '';
+                const desc = row['description'] || '';
+                if(code) {
+                    axisHtml += `<tr><td class="code-cell">${code}</td><td>${name}</td><td>${desc}</td></tr>`;
+                }
+            });
+            axisTbody.innerHTML = axisHtml;
+        }
 
-                    // アイコンとテキストを横並び（Flexbox）で綺麗に配置する
-                    ul.innerHTML += `<li style="border-bottom: 1px dashed #d8e8f5; margin-bottom: 12px; padding-bottom: 12px; display: flex; align-items: center; gap: 15px;">
+        // 2. 16タイプ一覧の生成（おすすめ職種つき）
+        if (typeList.children.length === 0) {
+            let listHtml = '';
+            for (let key in appData.results) {
+                const res = appData.results[key];
+                const imgSrc = res.avatar_base64 || res.avatar_url;
+                const imgHtml = imgSrc 
+                    ? `<img src="${imgSrc}" class="zukan-avatar">` 
+                    : `<div class="zukan-avatar"></div>`;
+                
+                const isMyType = (window.currentTypeCode === key) ? 'is-my-type' : '';
+                const shortDesc = res.short_desc || ""; 
+                const jobText = res.job || ""; 
+                
+                const jobHtml = jobText ? `<div class="zukan-job">🏢 職種：${jobText}</div>` : '';
+
+                listHtml += `
+                    <li class="zukan-card ${isMyType}">
                         ${imgHtml}
-                        <div style="display: flex; flex-direction: column; justify-content: center;">
-                            <span style="color: var(--blue-mid); font-size: 0.85em; line-height: 1.2;">${key}</span>
-                            <span style="line-height: 1.4; color: var(--text-main); font-weight: bold;">${res.type_name}</span>
+                        <div class="zukan-text">
+                            <span class="zukan-code">${key}</span>
+                            <div class="zukan-name">${res.type_name}</div>
+                            <div class="zukan-desc">${shortDesc}</div>
+                            ${jobHtml}
                         </div>
                     </li>`;
-                }
             }
-        } else {
-            listDiv.style.display = 'none';
+            typeList.innerHTML = listHtml;
         }
+
+        // 表示する
+        overlay.classList.add('show');
+    }
+
+    // 図鑑を閉じる処理
+    function closeZukan() {
+        document.getElementById('zukan-overlay').classList.remove('show');
+    }
+
+        <div id="zukan-overlay">
+            <div class="zukan-header">
+                <div class="zukan-title">土木16タイプ図鑑</div>
+                <button class="btn-close-zukan" onclick="closeZukan()">✕ 閉じる</button>
+            </div>
+            <div class="zukan-content">
+                <table class="axis-table">
+                    <thead>
+                        <tr><th>記号</th><th>指標名</th><th>特徴</th></tr>
+                </thead>
+                <tbody id="zukan-axis-tbody">
+                    </tbody>
+                </table>
+
+                <h3 style="color: var(--blue-deep); margin-bottom: 15px; font-weight: 900; text-align: center;">全16タイプ一覧</h3>
+                <ul class="zukan-list" id="zukan-type-list">
+                    </ul>
+            </div>
+        </div>
     }
 </script>
 </body>
