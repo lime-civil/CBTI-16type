@@ -274,11 +274,23 @@
         }
         .zukan-content { padding: 20px 15px 50px; max-width: 600px; margin: 0 auto; }
         
-        /* 軸説明の表デザイン */
+         /* 軸説明の表デザイン */
         .axis-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        .axis-table th, .axis-table td { padding: 12px; border-bottom: 1px solid #d8e8f5; text-align: left; }
+
+        /* ▼ 修正箇所①：padding（内側の余白）を 12px → 8px 4px に減らして、文字が入るスペースを広げる */
+        .axis-table th, .axis-table td { padding: 8px 4px; border-bottom: 1px solid #d8e8f5; text-align: center; }
+
         .axis-table th { background: var(--blue-mid); color: #fff; font-size: 0.85em; font-weight: bold; white-space: nowrap; }
-        .axis-table td { font-size: 0.85em; color: var(--text-main); line-height: 1.5; white-space: nowrap; font-size: 12px; /* スマホでも見やすいギリギリのサイズなどに調整 */}
+
+        /* ▼ 修正箇所②：絶対に改行させない「nowrap」と、単語の途中で切らない「keep-all」を追加 */
+        .axis-table td { 
+            font-size: 0.85em; 
+            color: var(--text-main); 
+            line-height: 1.5; 
+            white-space: nowrap; /* ←★絶対に改行しない */
+            word-break: keep-all; /* ←★単語の途中で切らない */
+        }
+
         .axis-table .code-cell { font-weight: 900; color: var(--blue-mid); font-size: 1.1em; text-align: center; }
 
         /* 16タイプリストのデザイン */
