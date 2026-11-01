@@ -308,6 +308,25 @@
         
         /* おすすめ職種タグ */
         .zukan-job { font-size: 0.75em; color: var(--blue-deep); background: #f0f7ff; padding: 6px 10px; border-radius: 6px; margin-top: 8px; display: inline-block; font-weight: bold; border: 1px solid #d8e8f5; white-space: nowrap;}
+
+        /* 狭い画面では図鑑の内容を折り返し、PC版の配置は維持する */
+        @media (max-width: 600px) {
+            .zukan-header { gap: 8px; }
+            .zukan-title { min-width: 0; overflow-wrap: anywhere; }
+            .btn-close-zukan { flex-shrink: 0; white-space: nowrap; }
+
+            .axis-table { table-layout: fixed; }
+            .axis-table th:nth-child(1) { width: 14%; }
+            .axis-table th:nth-child(2) { width: 28%; }
+            .axis-table th, .axis-table td {
+                white-space: normal;
+                word-break: normal;
+                overflow-wrap: anywhere;
+            }
+
+            .zukan-text { min-width: 0; overflow-wrap: anywhere; }
+            .zukan-job { max-width: 100%; white-space: normal; }
+        }
         
     </style>
 </head>
